@@ -17,11 +17,11 @@ Note right of SmartMonitor: sensor/switch\non GPIO
 Home Assistant-->SmartMonitor: Device tracker
 ```
 
-##Programmation de l&apos;ESP32
+## Programmation de l&apos;ESP32
 
 L&apos;explication ci-dessous ne tient compte que de l&apos;utilisation de l&apos;IDE  Arduino.
 
-###Préparation
+### Préparation
 Vous devez avoir installé le core 1.x pour ESP32 en ajoutant le lien ci-dessous dans les *préférences*:
 https://dl.espressif.com/dl/package_esp32_index.json
 
@@ -32,14 +32,14 @@ https://github.com/me-no-dev/arduino-esp32fs-plugin
 
 Il exsiste de très bons tutoriels si vous avez des problèmes sur ces deux points.
 
-###WT32-SC01
+### WT32-SC01
 Si vous pocédez le module WT32-SC01, vous pouvez télécharger directement le [firmware](http://todo/) sans avoir à tout recompiler ni vous préaucuper des librairies.
 Il est disponible chez [aliexpress](https://fr.aliexpress.com/item/1005003243416096.html) ou chez le [fabricant](https://french.alibaba.com/product-detail/WT32-SC01-16MB-esp32-touch-screen-1600308289988.html).
 ![](http://www.wireless-tag.com/wp-content/uploads/2020/07/%E6%9C%AA%E6%A0%87%E9%A2%98-1-%E6%81%A2%E5%A4%8D%E7%9A%84-300x263.jpg)
 
-###ESP32 WROOM  ou WROVER
+### ESP32 WROOM  ou WROVER
 
-####Dépendences des libraires
+#### Dépendences des libraires
 
 - Disponibles dans le gestionnaire de librairies:
 >ArduinoJson
@@ -48,7 +48,7 @@ LovyanGFX
 - En téléchargmenet sur mon Github
 >HAintegration [ici](http://todo/)
 
-####Préparation du module
+#### Préparation du module
 
 Avant de compiler le projet il faut configurer celui-ci pour votre couple ESP / TFT.
 pour celà éditez le fichier display_setup.h; selectionnez le define ESP32_TFT:
@@ -185,6 +185,8 @@ La page web propose 3 zones:
 
 Commencez par configurer le réseau wifi ainsi que les caractéristiques d&apos;accès au serveur mqtt de H.A.
 
+![](https://raw.githubusercontent.com/PM04290/Home-Assistant-SmartMonitor/main/res/config-wifi.png)
+
 >Si vous avez un serveur DHCP qui contrôle les adresses MAC, celle du module est indiquée dans le titre de la zone afin d&apos;ouvrir le bail adapté sur votre serveur DHCP.
 
 ⚠️ Important
@@ -196,11 +198,11 @@ C&apos;est aussi lors de cette configuration que vous pouvez choisir l&apos;orie
 
 Après la préparation du module, avec la configuration du wifi et du serveur Mqtt, si vous démarrez vous devriez avoir une icône d&apos;erreur et l&apos;informaton de l&apos;heure qui n&apos;arrive pas : H.A. n&apos;envoie pas encore de données.
 
-###Préparation de H.A.
+### Préparation de H.A.
 
 Avant tout il faut que H.A. publie les états des différentes entités que vous souhaitez gérer avec le module, et il faut commencer par l&apos;heure, afin de valider la bonne connexion du module au serveur.
 
-####Mise à jour de l&apos;heure　
+#### Mise à jour de l&apos;heure　
 Créez une automatisation :
 ```yaml
 - id: sm_mqtt_publish_time #id uniquement si vous éditez le fichier .yaml
@@ -221,7 +223,7 @@ Une fois l&apos;automatisation activée, l&apos;heure est publiée toutes les mi
 
 >A savoir que le module ne fait aucune interprétation du texte qui est envoyé, vous pouvez vous servir de se Topic pour envoyer n&apos;importe quel texte qui sera affiché en haut au centre de l&apos;écran.
 
-####Publication des *sensors*
+#### Publication des *sensors*
 
 Pour réaliser celà il faut utiliser le [mqtt_statestream](https://www.home-assistant.io/integrations/mqtt_statestream/) de H.A.
 
@@ -265,7 +267,7 @@ N&apos;hésitez pas à utiliser [Mqtt Explorer](http://mqtt-explorer.com/) afin 
 
 >A noter que si vous avez publié trop de données (comme l&apos;exemple ci-dessus) avant de mieux filtrer votre besoin, il est possible avec MQtt explorer de supprimer l&apos;arborescence **smartmonitor** et de relancer le serveur Mqtt. L&apos;arborescence sera reconstituée avec uniquement les valeurs filtrées.
 
-###Configuration de SmartMonitor
+### Configuration de SmartMonitor
 
 Maintenant que plusieurs données sont disponibles sur le serveur Mqtt, il est possible de configurer l&apos;affichage sur le module.
 
@@ -276,9 +278,11 @@ En premier lieu il faut choisir le nombre de Zone d&apos;affichage. Par défaut 
 Vous constaterez que l&apos;affichage de la page est effectué en plusieurs fois, en effet, il peut y avoir beaucoup de données affichées si il y a plusieurs pages et la mémoire de l&apos;ESP32 (même si elle est importante) ne permet pas de traiter un gros volume; l&apos;affichage a donc été segmenté en parties élémentaires, et envoyée par Websocket (un peu de technique). Laissez bien la page s&apos;afficher compètement avant de réaliser le paramétrage.
 >Problème connu : lors de certains affichages, la page peut ne pas se raffraichir complètement ou rester bloquée au début du chargement. Je n&apos;ai pas encore réussi à trouver d&apos;où venait le problème. Mais rassurez vous, en général un simple raffraichissement du navigateur suffit à recharger la page correctement.
 
-####Description des paramètres
+#### Description des paramètres
 
-#####Définition d&apos;une page
+![](https://raw.githubusercontent.com/PM04290/Home-Assistant-SmartMonitor/main/res/config-pages-vide.png)
+
+##### Définition d&apos;une page
 
 `ID` est un code unique de page qui va permettre la gestion du changement de page (lecture seule).
 
@@ -286,7 +290,7 @@ Vous constaterez que l&apos;affichage de la page est effectué en plusieurs fois
 
 `Type` à ce jour seul ***normalPage*** est utilisable; keypadPage est visible mais non sélectionnable, la page du digicode est crée implicitement lors de la configuration de *Alarm_control_panel*.
 
-#####Définition des zones d&apos;affichage
+##### Définition des zones d&apos;affichage
 
 Le nombre de ligne disponible par page va dépendre  des nombres Col/Lig que vous avez sélectionné.
 
@@ -314,7 +318,7 @@ Les zones sont affichées dans l'ordre suivant:
 `Page` permet de choisir la page qui sera affichée lors du choix de l&apos;action *changePage*.
 >Par defaut la liste ne contient que "kp"  (keypad), il faut créer une nouvelle page pour que le complément de liste soit mis à jour.
 
-#####Exemples de configurations
+##### Exemples de configurations
 
 Ci-dessous, dans MQTT, les termes en **gras** sont ceux que vous avez choisi dans H.A.
 
@@ -352,7 +356,7 @@ Exemple de changement de page:
 - Type : *inactif*
 - Page : p1
 
-####Gestion de l&apos;alarme
+#### Gestion de l&apos;alarme
 
 - Titre : Alarme
 - Action : changePage
@@ -395,7 +399,7 @@ ou:
 {action: DISARM, code="1234"}
 ```
 
-####Automatisation du changement de mode
+#### Automatisation du changement de mode
 
 L&apos;automatisation est crée initialement dans son éditeur afin de pouvoir choisir simplement le device et son trigger correspondant : **button_short_press_AlarmKeypad**
 
@@ -468,7 +472,7 @@ Dans cet autre exemple ci-dessous, il y a une vérification de l&apos;état d&ap
 La configuration du message temporaire est décrite ci-dessous.
 
 
-#####Messages temporaires sur l&apos;écran
+##### Messages temporaires sur l&apos;écran
 
 Le module peut recevoir un message temporaire, par exemple pour informer de l&apos;état des capteurs lors d&apos;une mise en alarme (sui une fenêtre est restée ouverte).
 Pour cela il faut créer un input_text :
@@ -478,7 +482,7 @@ Créez une nouvelle entrée de type *Texte* que vous nommerez par exemple : **no
 
 Lors que l&apos;on désire envoyer un message au module, il suffit d&apos;affecter une valeur à **notification_text**; une automatisation va publier le message et réinitialiser la valeur après un certain temps.
 
-#####Automatisation de message temporaire
+##### Automatisation de message temporaire
 
 ```yaml
 - id: sm_raz_published_message  #id uniquement si vous éditez le fichier .yaml
@@ -517,9 +521,9 @@ Lors que l&apos;on désire envoyer un message au module, il suffit d&apos;affect
       payload_template: '{{ states(''input_text.notification_text'') }}'
   mode: single
 ```
+to be continued... soon 😁
 
-
-###TODO list
+### TODO list
 
 - [x] ajouter tous les types de capteurs connus par H.A.
 - [ ] récupération automatique des unités d&apos;affichage
