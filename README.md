@@ -11,3 +11,7 @@ SmartMonitor est un logiciel embarqué dans un ESP32 permettant de communiquer a
 
 Le PDF est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/Home-Assistant-SmartMonitor/main/res/SmartMonitor-doc.pdf)
 
+## Installation
+
+Téléchargez le dossier *SmartMonitor* contenant le projet Arduino ou un des binaire du dosier *bin*.
+La documaentation indique les différentes librairies utiles.
