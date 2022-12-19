@@ -14,4 +14,4 @@ Le PDF est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/Home
 ## Installation
 
 Téléchargez le dossier *SmartMonitor* contenant le projet Arduino ou un des binaire du dosier *bin*.
-La documaentation indique les différentes librairies utiles.
+La documentation indique les différentes librairies utiles.
