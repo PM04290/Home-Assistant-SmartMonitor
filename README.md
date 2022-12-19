@@ -9,5 +9,5 @@ SmartMonitor est un logiciel embarqué dans un ESP32 permettant de communiquer a
 
 ## Documentation
 
-Le PDF est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/Home-Assistant-SmartMonitor/main/res/SmartMonitor-doc.pdfg)
+Le PDF est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/Home-Assistant-SmartMonitor/main/res/SmartMonitor-doc.pdf)
 
