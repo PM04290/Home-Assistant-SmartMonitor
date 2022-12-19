@@ -1,0 +1,1 @@
+{"col":"2","row":"3","pages":[{"id":"p0","title":"Menu","items":[{"label":"Elevation","action":3,"mqtt":"smartmonitor/sun/sun/elevation","datatype":48}]}],"gpio":[{"pin":0,"name":"","type":0},{"pin":0,"name":"","type":0},{"pin":0,"name":"","type":0}],"end":true}

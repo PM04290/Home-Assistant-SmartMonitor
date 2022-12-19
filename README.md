@@ -43,10 +43,10 @@ Il est disponible chez [aliexpress](https://fr.aliexpress.com/item/1005003243416
 
 - Disponibles dans le gestionnaire de librairies:
 >ArduinoJson
-ESPAsyncWebServer
-LovyanGFX
+>ESPAsyncWebServer
+>LovyanGFX
 - En téléchargmenet sur mon Github
->HAintegration [ici](http://todo/)
+>HAintegration [ici](https://github.com/PM04290/HAintegration)
 
 #### Préparation du module
 
@@ -526,12 +526,13 @@ to be continued... soon 😁
 ### TODO list
 
 - [x] ajouter tous les types de capteurs connus par H.A.
+- [x] gestion des publications d'attibuts
 - [ ] récupération automatique des unités d&apos;affichage
 - [ ] compléter la liste des écrans TFT dans display_setup.h
 - [ ] affichage du forecast météo (icônes sur n jours)
-- [ ] gérer tous les mode d'alarme supplémentaires (present, vacation, custom)
+- [ ] gérer tous les modes d'alarme supplémentaires (present, vacation, custom)
 - [ ] amélioration du message temporation pour devenir une notification
-- [ ]
+- [ ] finir GPIO
 - [ ] traduction
 
 Fichier readme édité avec [MEditor.md](https://pandao.github.io/editor.md/index.html)
