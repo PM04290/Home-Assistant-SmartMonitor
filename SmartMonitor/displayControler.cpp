@@ -38,7 +38,12 @@ void Xcontroler::init()
   displayConfig.height = lcd.height();
   //DEBUGf("display O:%d W:%d H:%d\n", lcd.getRotation(), displayConfig.width, displayConfig.height);
   lcd.setColorDepth(24);
-  lcd.setFont(&font_XS);
+  if (lcd.width() >= 480)
+  {
+    lcd.setFont(&font_XS);
+  } else {
+    lcd.setFont(&font_XXS);
+  }
   lcd.setCursor(0, 0);
 
   size_t nb = readFile("/i/flashscreen.png");
@@ -103,9 +108,13 @@ void Xcontroler::drawHeader(char* dateheure)
   header.drawLine(0 , displayConfig.headerheight - 1, displayConfig.width, displayConfig.headerheight - 1, COLOR_GRAY);
   header.setTextColor(mqttConnected ? COLOR_GRAY : COLOR_RED);
   header.setTextDatum(lgfx::top_left);
+  int xDate = 0;
+#ifndef SMALL_SCREEN
   header.drawString("SmartMonitor", 0, 0);
   header.setTextDatum(lgfx::top_center);
-  header.drawString(dateheure, displayConfig.width / 2, 0);
+  xDate = displayConfig.width / 2;
+#endif
+  header.drawString(dateheure, xDate, 0);
   header.setTextDatum(lgfx::top_right);
   header.drawString(String(wifiQuality) + "%", displayConfig.width, 0);
   header.pushSprite(&lcd, 0, 0);
@@ -324,7 +333,7 @@ size_t Xcontroler::readFile(const char * path)
 bool Xcontroler::screenDump(void)
 {
   std::size_t dlen;
-  std::uint8_t* png = (std::uint8_t*)lcd.createPng(&dlen, 0, 0, 120, 80);
+  std::uint8_t* png = (std::uint8_t*)lcd.createPng(&dlen, 0, 0, 10, 10);
   if (!png)
   {
     DEBUGln("error:createPng");
@@ -484,9 +493,6 @@ void Xcontroler::mqttProcess(mqttMsg* msg)
               item->setData(String(msg->payload));
             }
           }
-        } else
-        {
-          item->setData(String(msg->payload));
         }
       }
     }

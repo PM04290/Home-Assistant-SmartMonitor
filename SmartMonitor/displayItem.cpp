@@ -37,6 +37,7 @@ Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c
   _dataUnit = "";
   _datatype = DataType::implicit;
 }
+
 Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color, const char* title)
   : Xitem(idx, x, y, w, h, color, title, &zone)
 {
@@ -440,8 +441,11 @@ void XitemButton::draw(bool pressed)
     _sprite->setTextSize(1);
     _sprite->setTextDatum(lgfx::middle_center);
     _sprite->drawRoundRect( 7, 7 , _w - 14, _h - 14, displayConfig.cornerradius, pressed ? _colorPressed : COLOR_GRAY);
+
+    _sprite->fillRoundRect( 11, _h - 18 , _w - 22, 8, 4, pressed ? _colorPressed : COLOR_GRAY);
+
     _sprite->setTextColor(pressed ? _colorPressed : _color);
-    _sprite->drawString(_title, _w / 2, _h / 2);
+    _sprite->drawString(_title, _w / 2, 2 * _h / 5);
     _sprite->pushSprite(&lcd, _x, _y);
   }
 }
@@ -589,7 +593,7 @@ void XitemInfo::setData(String Sdata)
         break;
       case DataType::cover_state:
         _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-cover-%s.png", _data.c_str());
+        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
         break;
       case DataType::light_state:
         _data.toLowerCase();
@@ -597,7 +601,7 @@ void XitemInfo::setData(String Sdata)
         break;
       case DataType::lock_state:
         _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-lock-%s.png", _data.c_str());
+        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
         break;
       case DataType::switch_state:
         _data.toLowerCase();
@@ -605,6 +609,12 @@ void XitemInfo::setData(String Sdata)
         break;
       case DataType::binary_state:
         _data.toLowerCase();
+        if (_data == "off") {
+          _data = "false";
+        }
+        if (_data == "on") {
+          _data = "true";
+        }
         sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
         break;
     }
@@ -659,13 +669,11 @@ void XitemInfo::draw(bool pressed)
   }
   if ((_dispMode & (displayMode::title_text | displayMode::data_text)) || iconerror) {
     if (_action == BtnAction::Command) {
-      _sprite->setFont(&font_M);
-      _sprite->setTextDatum(lgfx::middle_center);
       _sprite->setTextColor(pressed ? COLOR_WHITE : _color);
     }
     if (_dispMode & displayMode::title_text)
     {
-      _sprite->setFont(&font_L);
+      _sprite->setFont(&font_M);
       _sprite->setTextDatum(lgfx::middle_center);
       _sprite->drawString(_title, xT, _h / 2);
     } else
@@ -696,12 +704,12 @@ void XitemInfo::draw(bool pressed)
       } else
       {
         _sprite->setTextDatum(lgfx::baseline_center);
-        _sprite->drawString(_data + _dataUnit, xT, yT * 2 - 3);
+        _sprite->drawString(_data, xT, yT * 2 - 3);
       }
       _sprite->setFont(&font_XS);
       _sprite->setTextColor(COLOR_GRAY);
       _sprite->setTextDatum(lgfx::top_center);
-      _sprite->drawString(_title, xT, yT * 2 + 3);
+      _sprite->drawString(String(_title) + " (" + _dataUnit + ")", xT, yT * 2 + 3);
     }
   }
 

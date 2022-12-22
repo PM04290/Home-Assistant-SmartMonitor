@@ -244,8 +244,8 @@ void onMqttConnected()
 void onMqttDisconnected()
 {
   mqttConnected = false;
-  SMcontroler.drawHeader("Défaut connexion serveur");
-  //DEBUGf("MQTT disconnected\n");
+  SMcontroler.drawHeader("Défaut serveur");
+  DEBUGf("MQTT disconnected\n");
 }
 
 void onNumberCommand(HANumeric number, HANumber * sender)
@@ -313,7 +313,7 @@ void loadItems(Xpage* page, JsonArray itemList)
           }
           //DEBUGf("          add command\n");
           page->addItem(new XitemCommand(i, x, y, displayConfig.zonewidth, displayConfig.zoneheight, COLOR_CYAN, title, BtnAction::ChangePage))
-          ->setMQTTconfig(tmpMQTT, (DataType)(int)item["type"].as<int>())
+          ->setMQTTconfig(tmpMQTT, (DataType)(int)item["datatype"].as<int>())
           ->setTargetPage(targetPage); // en dernier pour indiquer l'action "changePage"
           free(tmpMQTT);
           itemAdded = true;

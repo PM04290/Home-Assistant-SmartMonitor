@@ -13,6 +13,15 @@
 #include <HAintegration.h>
 #include "display_setup.h"
 
+#ifdef SMALL_SCREEN
+static const lgfx::U8g2font font_XXS( myVerdana08_tf );
+static const lgfx::U8g2font font_XS( myVerdana10_tf );
+static const lgfx::U8g2font font_S( myVerdana14_tf );
+static const lgfx::U8g2font font_M( myVerdana18_tf );
+static const lgfx::U8g2font font_L( myVerdana22_tf );
+static const lgfx::U8g2font font_XL( myVerdana28_tf );
+static const lgfx::U8g2font font_XXL( myRoboto36r_tf );
+#else
 static const lgfx::U8g2font font_XXS( myVerdana10_tf );
 static const lgfx::U8g2font font_XS( myVerdana14_tf );
 static const lgfx::U8g2font font_S( myVerdana18_tf );
@@ -20,15 +29,7 @@ static const lgfx::U8g2font font_M( myVerdana22_tf );
 static const lgfx::U8g2font font_L( myVerdana28_tf );
 static const lgfx::U8g2font font_XL( myRoboto36r_tf );
 static const lgfx::U8g2font font_XXL( myRoboto48r_tf );
-/*
-static const lgfx::U8g2font font_XXS( myRoboto10_tf );
-static const lgfx::U8g2font font_XS( myRoboto14_tf );
-static const lgfx::U8g2font font_S( myRoboto18_tf );
-static const lgfx::U8g2font font_M( myRoboto22_tf );
-static const lgfx::U8g2font font_L( myRoboto28_tf );
-static const lgfx::U8g2font font_XL( myRoboto36_tf );
-static const lgfx::U8g2font font_XXL( myRoboto48_tf );
-*/
+#endif
 
 // http://www.rinkydinkelectronics.com/calc_rgb565.php
 #define COLOR_BLACK  0x0000
@@ -37,7 +38,7 @@ static const lgfx::U8g2font font_XXL( myRoboto48_tf );
 #define COLOR_GREEN  lcd.color888(0, 133, 41)
 #define COLOR_GRAY   lcd.color888(80, 80, 80)
 #define COLOR_RED    lcd.color888(250, 0, 0)
-#define COLOR_CYAN   lcd.color888(0, 210, 210)
+#define COLOR_CYAN   lcd.color888(0, 200, 200)
 
 struct displayConfig_t {
   uint16_t width;

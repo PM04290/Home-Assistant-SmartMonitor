@@ -13,7 +13,7 @@ const int BUZZZER_PIN = 18; // GIOP18 pin connected to piezo buzzer
 
 #define MAX_DIALOG_TEXT_SIZE 1024
 
-#define SM_VERSION "0.1"
+#define SM_VERSION "0.2"
 
 #define JSON_MAX_SIZE 10000
 #define JSON_PAYLOAD_SIZE 3000

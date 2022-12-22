@@ -442,7 +442,7 @@ void handleDoFile(AsyncWebServerRequest *request, const String& filename, size_t
 
 void updateProgress(size_t prg, size_t sz) {
   DEBUGf("Progress: %d%%\n", (prg * 100) / content_len);
-  lcd.setCursor(lcd.width() - 65, 0);
+  lcd.setCursor(lcd.width() - 63, 0);
   lcd.printf("Upl:%d%%", (prg * 100) / content_len);
 }
 
@@ -585,6 +585,16 @@ void configWeb() {
     delay(500);
     ESP.restart();
   });
+  /*
+  server.on("/screendump", HTTP_GET, [] (AsyncWebServerRequest * request)
+  {
+    SMcontroler.screenDump();
+    AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
+    response->addHeader("Refresh", "5");
+    response->addHeader("Location", "/");
+    request->send(response);
+  });
+  */
   server.begin();
   ws.onEvent(onEvent);
   server.addHandler(&ws);

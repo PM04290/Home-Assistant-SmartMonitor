@@ -3,6 +3,9 @@
 */
 #pragma once
 
+// uncomment line below if screen is under 480x320
+//#define SMALL_SCREEN 1
+
 // Choix de la cible
 #define SC01
 //#define SC01Plus
