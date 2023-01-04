@@ -181,7 +181,7 @@ void XpageDialog::drawText(JsonArray textlist)
         lcd.print(" > ");
         lcd.setTextColor(COLOR_WHITE);
       }
-      lcd.println(line.as<char*>());
+      lcd.println(line.as<const char*>());
       nbt++;
     }
     //DEBUGf("Page %s draw items %d %d %d %d\n", _id, _x, _y, _w, _h);

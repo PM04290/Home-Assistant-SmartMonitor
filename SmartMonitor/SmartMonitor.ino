@@ -32,6 +32,7 @@ HANumber* brightness;
 extern LGFX lcd;
 
 extern Xcontroler SMcontroler;
+
 extern displayConfig_t displayConfig;
 extern uint8_t displayOrientation;
 extern bool mqttConnected;
@@ -83,6 +84,37 @@ void print_reset_reason(int reason)
   }
 }
 
+hw_timer_t * timer = NULL;
+volatile SemaphoreHandle_t timerSemaphore;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+volatile bool isrTopSecond = false;
+
+void IRAM_ATTR onTimer() {
+  // Increment the counter and set the time of ISR
+  portENTER_CRITICAL_ISR(&timerMux);
+  isrTopSecond = true;
+  portEXIT_CRITICAL_ISR(&timerMux);
+  // Give a semaphore that we can check in the loop
+  xSemaphoreGiveFromISR(timerSemaphore, NULL);
+  // It is safe to use digitalRead/Write here if you want to toggle an output
+}
+
+void setupTimer()
+{
+  // Create semaphore to inform us when the timer has fired
+  timerSemaphore = xSemaphoreCreateBinary();
+  // Use 1st timer of 4 (counted from zero).
+  // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more info).
+  timer = timerBegin(0, 80, true);
+  // Attach onTimer function to our timer.
+  timerAttachInterrupt(timer, &onTimer, true);
+  // Set alarm to call onTimer function every second (value in microseconds).
+  // Repeat the alarm (third parameter)
+  timerAlarmWrite(timer, 1000000, true);
+  // Start an alarm
+  timerAlarmEnable(timer);
+}
+
 void setup(void)
 {
 #ifdef DEBUG_SERIAL
@@ -107,17 +139,16 @@ void setup(void)
   {
     DEBUGln("failed to initialise EEPROM");
   } else {
-    /*
-      EEPROM.write(0, displayOrientation);
-      EEPROM.writeChar(1, AP_ssid[8]);
-      EEPROM.writeString(EEPROM_TEXT_OFFSET, Wifi_ssid);
-      EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 1), Wifi_pass);
-      EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);
-      EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 3), mqtt_user);
-      EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
-      EEPROM.commit();
-    */
-
+/*
+    EEPROM.write(0, displayOrientation);
+    EEPROM.writeChar(1, AP_ssid[8]);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET, Wifi_ssid);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 1), Wifi_pass);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 3), mqtt_user);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
+    EEPROM.commit();
+*/
     displayOrientation = EEPROM.read(0) % 4;
     char code = EEPROM.readChar(1);
     if (code >= '0' && code <= '9') {
@@ -130,19 +161,15 @@ void setup(void)
       strcpy(mqtt_user, EEPROM.readString(EEPROM_TEXT_OFFSET + EEPROM_TEXT_SIZE * 3).c_str());
       strcpy(mqtt_pass, EEPROM.readString(EEPROM_TEXT_OFFSET + EEPROM_TEXT_SIZE * 4).c_str());
     }
-    /*
-        DEBUGln(displayOrientation);
-        DEBUGln(AP_ssid);
-        DEBUGln(Wifi_ssid);
-        DEBUGln(Wifi_pass);
-        DEBUGln(mqtt_host);
-        DEBUGln(mqtt_user);
-        DEBUGln(mqtt_pass);
-    */
+    DEBUGln(displayOrientation);
+    DEBUGln(AP_ssid);
+    DEBUGln(Wifi_ssid);
+    DEBUGln(Wifi_pass);
+    DEBUGln(mqtt_host);
+    DEBUGln(mqtt_user);
+    DEBUGln(mqtt_pass);
   }
-
   SMcontroler.init();
-
   configWifi();
 
   byte mac[6];
@@ -150,7 +177,13 @@ void setup(void)
   // HA
   device.setUniqueId(mac, sizeof(mac));
   device.setManufacturer("M&L");
+#ifdef defined(SC01)
   device.setModel("SmartMonitor (WT32-SC01)");
+#elif defined(SC01Plus)
+  device.setModel("SmartMonitor (WT32-SC01 Plus)");
+#else
+  device.setModel("SmartMonitor (ESP32/TFT custom)");
+#endif
   device.setName(AP_ssid);
   device.setSoftwareVersion(SM_VERSION);
 
@@ -191,17 +224,30 @@ void setup(void)
     SMcontroler.drawBackground();
     SMcontroler.drawHeader("Attente serveur");
   }
+  setupTimer();
 }
 
 void loop()
 {
+  bool isNewSec = false;
+  if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)
+  {
+    portENTER_CRITICAL(&timerMux);
+    isNewSec = isrTopSecond;
+    isrTopSecond = false;
+    portEXIT_CRITICAL(&timerMux);
+  }
+  if (isNewSec)
+  {
+    //DEBUGf("%d %d %d %d\n", ESP.getHeapSize(), ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+  }
   if (isConfigLoaded)
   {
     mqtt.loop();
     SMcontroler.loop();
     for (int i = 0; i < nbGPIO; i++)
     {
-      GPIOs[i].process();
+      GPIOs[i].process(isNewSec);
     }
   } else
   {
@@ -364,9 +410,9 @@ void createKeypadPage(const char* target)
       Xp->addItem(new XitemKPad(idx++, x + 1, y + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, txt, ACParmType::none));
     }
   }
-  Xp->addItem(new XitemKPad(idx++, padding_x + 5 * displayConfig.kpadsize + 1, padding_y + (displayConfig.kpadsize * 0) + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, "/i/d48-armed_away.png", ACParmType::armAway));
-  Xp->addItem(new XitemKPad(idx++, padding_x + 5 * displayConfig.kpadsize + 1, padding_y + (displayConfig.kpadsize * 1) + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, "/i/d48-armed_night.png", ACParmType::armNight));
-  Xp->addItem(new XitemKPad(idx++, padding_x + 5 * displayConfig.kpadsize + 1, padding_y + (displayConfig.kpadsize * 3) + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, "/i/d48-disarmed.png", ACParmType::disarm));
+  Xp->addItem(new XitemKPad(idx++, padding_x + 5 * displayConfig.kpadsize + 1, padding_y + (displayConfig.kpadsize * 0) + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, "/i/d60-acp-armed_away.png", ACParmType::armAway));
+  Xp->addItem(new XitemKPad(idx++, padding_x + 5 * displayConfig.kpadsize + 1, padding_y + (displayConfig.kpadsize * 1) + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, "/i/d60-acp-armed_night.png", ACParmType::armNight));
+  Xp->addItem(new XitemKPad(idx++, padding_x + 5 * displayConfig.kpadsize + 1, padding_y + (displayConfig.kpadsize * 3) + 1, displayConfig.kpadsize - 2, displayConfig.kpadsize - 2, COLOR_GRAY, "/i/d60-acp-disarmed.png", ACParmType::disarm));
   SMcontroler.addPage(Xp);
 }
 
@@ -422,9 +468,14 @@ void LoadConfig()
     //DEBUGf("  hardware array\n");
     for (JsonVariant elt : hardware.as<JsonArray>())
     {
-      if (nbGPIO < MAX_GPIO && elt["pin"].as<int>() > 0 && strlen(elt["name"].as<char*>()) > 0)
+      if (nbGPIO < MAX_GPIO && elt["pin"].as<int>() > 0 && strlen(elt["name"].as<const char*>()) > 0)
       {
-        GPIOs[nbGPIO].create(AP_ssid, elt["pin"].as<int>(), (HardwareType)elt["type"].as<int>(), elt["name"].as<char*>());
+        HardwareType ht = (HardwareType)elt["type"].as<int>();
+        GPIOs[nbGPIO].create(AP_ssid, elt["pin"].as<int>(), ht, elt["name"].as<const char*>());
+        if (ht == HardwareType::numberSensor && strlen(elt["coefa"].as<const char*>()) > 0)
+        {
+          GPIOs[nbGPIO].setCoef(elt["coefa"].as<float>(), elt["coefb"].as<float>());
+        }
         nbGPIO++;
       }
     }

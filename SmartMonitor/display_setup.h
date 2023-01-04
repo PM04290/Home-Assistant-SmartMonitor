@@ -9,14 +9,15 @@
 // Choix de la cible
 #define SC01
 //#define SC01Plus
-//#define ESP32_TFT
+//#define ESP32_TFT_240
 
+
+//*****************************************************
 #ifdef SC01
 // describe the pin list available for external using
-static uint8_t pinAvailable[] = {5, 22, 23};
+static uint8_t pinAvailable[] = {0, 2, 4, 5, 25, 26, 35};
 
 #define CORNER_RADIUS 10
-//*****************************************************
 class LGFX : public lgfx::LGFX_Device
 {
     lgfx::Panel_ST7796  _panel_instance;
@@ -159,7 +160,7 @@ class LGFX : public lgfx::LGFX_Device
         cfg.offset_rotation  =     0;
         cfg.dummy_read_pixel =     8;
         cfg.dummy_read_bits  =     1;
-        cfg.readable         =  true;
+        cfg.readable         =  false;
         cfg.invert           = true;
         cfg.rgb_order        = false;
         cfg.dlen_16bit       = false;
@@ -206,7 +207,7 @@ class LGFX : public lgfx::LGFX_Device
 #endif
 
 //*****************************************************
-#ifdef ESP32_TFT
+#ifdef ESP32_TFT_240
 // describe the pin list available for external using
 static uint8_t pinAvailable[] = {5, 22};
 
@@ -276,10 +277,10 @@ class LGFX : public lgfx::LGFX_Device
         cfg.offset_rotation = 1;
 
         cfg.spi_host = VSPI_HOST;
-        cfg.pin_cs   = 33;
-        cfg.pin_mosi = GPIO_NUM_23;
-        cfg.pin_miso = GPIO_NUM_19;
-        cfg.pin_sclk = GPIO_NUM_18;
+        cfg.pin_cs   = 22;
+        cfg.pin_mosi = 23;
+        cfg.pin_miso = 19;
+        cfg.pin_sclk = 18;
 
         cfg.freq = 2700000;
 

@@ -36,7 +36,7 @@ static const lgfx::U8g2font font_XXL( myRoboto48r_tf );
 #define COLOR_WHITE  lcd.color888(255, 255, 255)
 #define COLOR_ORANGE lcd.color888(253, 126, 20)
 #define COLOR_GREEN  lcd.color888(0, 133, 41)
-#define COLOR_GRAY   lcd.color888(80, 80, 80)
+#define COLOR_GRAY   lcd.color888(90, 90, 90)
 #define COLOR_RED    lcd.color888(250, 0, 0)
 #define COLOR_CYAN   lcd.color888(0, 200, 200)
 
@@ -83,6 +83,7 @@ class Xcontroler {
     void mqttMsgPush(const char* topic, const char* payload);
     void mqttMsgPop();
     void mqttProcess(mqttMsg* msg);
+    void setPinBuzzer(int pin);
   protected:
     Xitem* detectTouch();
     Xpage** _listPages;
@@ -95,6 +96,7 @@ class Xcontroler {
     uint16_t _msgWp;
     uint16_t _msgRp;
     uint16_t _msgCount;
+    int _pinBuzzer;
 };
 
 class Xpage {
@@ -198,6 +200,7 @@ class Xitem {
     LGFX_Sprite* _sprite;
     uint16_t _dispMode;
     char* _iconPath;
+    uint8_t _iconSize;
 };
 
 class XitemButton : public Xitem

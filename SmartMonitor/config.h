@@ -4,6 +4,7 @@
 #pragma once
 
 #define DEBUG_SERIAL
+//#define USE_ETHERNET
 
 const int BUZZZER_PIN = 18; // GIOP18 pin connected to piezo buzzer
 
@@ -105,13 +106,15 @@ enum DataType {
 };
 
 enum HardwareType {
-  binarySensor = 0,
-  numberSensor = 1,
-  stateSensor = 2,
-  tagScanner = 3,
-  switchOutput = 4,
-  lockOutput = 5,
-  lightOutput = 6,
+  noIO = 0,
+  buzzerTouch = 1,
+  binarySensor = 2,
+  numberSensor = 3,
+  stateSensor = 4,
+  tagScanner = 5,
+  switchOutput = 6,
+  lockOutput = 7,
+  lightOutput = 8,
   // keep below last
   lastHardwareType,
 };

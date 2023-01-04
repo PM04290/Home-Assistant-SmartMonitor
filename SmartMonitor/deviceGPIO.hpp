@@ -5,12 +5,16 @@
 #define MAX_GPIO 3
 int nbGPIO = 0;
 
+extern Xcontroler SMcontroler;
+
 struct GPIOdef {
   HABaseDeviceType* _device;
-  uint8_t _pin = 0;
+  int8_t _pin = -1;
   char _id[20] = "";
   char _name[50] = "";
   uint32_t _lastTime = 0;
+  float _cA = 1.0;
+  float _cB = 0;
   HardwareType _htype;
   bool _oldBinarySensor = false;
 
@@ -18,23 +22,40 @@ struct GPIOdef {
     _pin = pin;
     _lastTime = 0;
     _oldBinarySensor = false;
-    pinMode(pin, INPUT_PULLUP);
     strcpy(_name, name);
+    _htype = htype;
     //DEBUGf("gpio %s\n",_name);
     switch (htype)
     {
+      case HardwareType::buzzerTouch:
+        SMcontroler.setPinBuzzer(pin);
+        ledcAttachPin(pin, 0);
+        break;
       case HardwareType::binarySensor:
+        pinMode(pin, INPUT_PULLUP);
         sprintf(_id, "%s_bs%d", devicename, nbGPIO);
         _device = new HABinarySensor(_id);
         _device->setName(_name);
         _oldBinarySensor = digitalRead(pin);
         ((HABinarySensor*)_device)->setCurrentState(_oldBinarySensor);
-        ((HABinarySensor*)_device)->setDeviceClass("door"); // TODO
+        //((HABinarySensor*)_device)->setDeviceClass("door"); // TODO
+        break;
+      case HardwareType::numberSensor:
+        sprintf(_id, "%s_ns%d", devicename, nbGPIO);
+        _device = new HASensorNumber(_id, HASensorNumber::PrecisionP1);
+        _device->setName(_name);
         break;
     }
   }
 
-  void process() {
+  void setCoef(float A, float B)
+  {
+    _cA = A;
+    _cB = B;
+    DEBUGf("coef A %f B %f\n", A,B);
+  }
+
+  void process(bool topSecond) {
     uint32_t t = millis();
     if (_htype == HardwareType::binarySensor)
     {
@@ -60,6 +81,18 @@ struct GPIOdef {
         _lastTime = 0;
       }
     }
+    if (topSecond && (_htype == HardwareType::numberSensor))
+    {
+      uint32_t sum = 0;
+      for (int i=0; i < 20; i++)
+      {
+        sum += analogRead(_pin);
+      }
+      sum = sum / 20;
+      float v = _cA * (float)sum + _cB;
+      ((HASensorNumber*)_device)->setValue(v, false);
+    }
   }
 };
+
 GPIOdef GPIOs[MAX_GPIO];

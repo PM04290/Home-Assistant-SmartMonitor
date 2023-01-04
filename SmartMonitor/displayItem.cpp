@@ -36,6 +36,7 @@ Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c
   _iconPath = NULL;
   _dataUnit = "";
   _datatype = DataType::implicit;
+  _iconSize = 48;
 }
 
 Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color, const char* title)
@@ -481,6 +482,7 @@ XitemKPad::XitemKPad(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, ui
 {
   _armType = armType;
   // TODO remplacer l'utilisation de title pour les icon (utiliser iconPath)
+  _iconSize = 60;
   switch (_armType)
   {
     case ACParmType::disarm:
@@ -518,7 +520,7 @@ void XitemKPad::draw(bool pressed)
     {
       size_t nb = SMcontroler.readFile(_title);
       if (nb) {
-        _sprite->drawPng(SMcontroler.getIconData(), nb, (displayConfig.kpadsize - 48) / 2 - 2, (displayConfig.kpadsize - 48) / 2 - 2);
+        _sprite->drawPng(SMcontroler.getIconData(), nb, (displayConfig.kpadsize - 60) / 2 - 2, (displayConfig.kpadsize - 60) / 2 - 2);
       }
     }
     if (_dispMode & displayMode::title_text)
@@ -585,7 +587,8 @@ void XitemInfo::setData(String Sdata)
     switch (_datatype)
     {
       case DataType::alarm_state:
-        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
+        _iconSize = 60;
+        sprintf(_iconPath, "/i/d60-acp-%s.png", _data.c_str());
         break;
       case DataType::weather_state:
         _data.toLowerCase();
@@ -644,14 +647,11 @@ void XitemInfo::draw(bool pressed)
   _sprite->setTextColor(_color);
   //_sprite->drawRoundRect( 0, 0 , _w, _h, displayConfig.cornerradius, COLOR_GRAY);
 
-  // affichage normal avec image et text
-  int Isize = 48;
-
   int32_t xT = _w / 2; // au centre
   int32_t yT = _h / 3;
 
-  int32_t xI = _w / 2 - (Isize / 2); // au centre
-  int32_t yI = (_h / 2) - (Isize / 2) - 1;
+  int32_t xI = _w / 2 - (_iconSize / 2); // au centre
+  int32_t yI = (_h / 2) - (_iconSize / 2) - 1;
   bool iconerror = false;
   size_t nb = 0;
   if (_dispMode & (displayMode::static_icon | displayMode::data_icon))
@@ -660,7 +660,7 @@ void XitemInfo::draw(bool pressed)
     if (nb) {
       if (_dispMode & (displayMode::title_text | displayMode::data_text)) {
         xI = 1; // à gauche car icon + texte
-        xT = Isize + (_w - Isize) / 2; // au centre de ce qu'il reste
+        xT = _iconSize + (_w - _iconSize) / 2; // au centre de ce qu'il reste
       }
       _sprite->drawPng(SMcontroler.getIconData(), nb, xI, yI);
     } else {

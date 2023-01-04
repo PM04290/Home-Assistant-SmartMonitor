@@ -26,7 +26,7 @@
 			<h4>Capteurs/actionneurs</h4>
 			<!--%GENHTMLGPIO%-->
 			<div class="col-md-12 pt-2">
-				<button type="submit" class="btn btn-primary">Valide</button>
+				<button type="submit" class="btn btn-primary bi-upload">&nbsp;Valide</button>
 				<span class="bg-success" style="opacity: 0" id="resultconf"><strong>Enregistr&eacute;!</strong></span>
 			</div>
 		</div>
@@ -35,13 +35,13 @@
 	<!-- WIFI -->
 	<FORM action="/doconfig" id="formwifi" role="form">
 		<div class="row mb-3 bs-callout bs-callout-warning p-1">
-            <h4>WIFI / MQTT (MAC:%CNFMAC%)</h4>
+            <h4>WIFI / MQTT&nbsp;<small class="text-muted">MAC:%CNFMAC%</small></h4>
 			<input type="hidden" name="cnf" value="wifi">
 			<div class="col-md-12 mb-2 row">
 				<div class="form-group col-sm-1">
 					<div class="input-group">
 					  <span class="input-group-text" id="cnf_code">Code</span>
-					  <input type="number" class="form-control" aria-describedby="cnf_code" name="CODE" value="%CNFCODE%">
+					  <input type="number" class="form-control" aria-describedby="cnf_code" name="CODE" min="0" max="9" value="%CNFCODE%">
 					</div>
 				</div>
 				<div class="form-group col-sm-3">
@@ -91,7 +91,7 @@
 				</div>
 			</div>
 			<div class="col-sm-12">
-				<button type="submit" class="btn btn-primary">Valide</button>
+				<button type="submit" class="btn btn-primary bi-upload">&nbsp;Valide</button>
 				<span class="bg-success" style="opacity: 0" id="resultwifi"><strong>Enregistr&eacute;!</strong></span>
 			</div>
 		</div>
@@ -104,7 +104,7 @@
 				<input class="form-control form-control-sm" id="formBinSm" type="file" name='update'>
 			</div>			
 			<div class="col-sm-12">
-				<input type="submit" class="btn btn-primary" value="Lancer">
+				<button type="submit" class="btn btn-primary bi-upload">&nbsp;Lancer</button>
 				<span class="bg-success" style="opacity: 0" id="resultupdate"><strong>Enregistr&eacute;!</strong></span>
 			</div>
 		</div>
@@ -117,13 +117,13 @@
 				<input class="form-control form-control-sm" id="formFileSm" type="file" name='update'>
 			</div>			
 			<div class="col-sm-12">
-				<input type="submit" class="btn btn-primary" value="Lancer">
+				<button type="submit" class="btn btn-primary bi-upload">&nbsp;Lancer</button>
 				<span class="bg-success" style="opacity: 0" id="resultupdate"><strong>Enregistr&eacute;!</strong></span>
 			</div>
 		</div>
 	</form>
-	<a href="/config.json" class="btn btn-success" download>Télécharger config</a>
-	<button type="button" class="btn btn-danger" onclick="$.get('/restart');">Reset</button>
+	<a href="/config.json" class="btn btn-success bi-download" download>&nbsp;Télécharger config</a>
+	<button type="button" class="btn btn-danger bi-power float-end" onclick="$.get('/restart');">&nbsp;Reset</button>
 	</main>
 <script>
   window.addEventListener('load', onLoad);

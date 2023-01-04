@@ -133,6 +133,25 @@ function loadSelect() {
 		var page = $(this).attr('placeholder');
 		$(this).val(page);
 	});
+	// GPIO
+	$("select[name^='gpio_type']").change(function () {
+		var arr = this.name.split("_");
+		var optionSelected = $(this).find("option:selected");
+		var valueSelected  = optionSelected.val();
+		var coefGPIO = "gpio_coefa_"+arr[2];
+		console.log(valueSelected);
+		if (valueSelected == 3) {
+			$("input[name='"+coefGPIO+"']").removeAttr('disabled');
+		}else{
+			$("input[name='"+coefGPIO+"']").attr('disabled', 'disabled');
+		}
+		coefGPIO = "gpio_coefb_"+arr[2];
+		if (valueSelected == 3) {
+			$("input[name='"+coefGPIO+"']").removeAttr('disabled');
+		}else{
+			$("input[name='"+coefGPIO+"']").attr('disabled', 'disabled');
+		}
+	});
 	
 	/*
 	// Create a client instance https://github.com/eclipse/paho.mqtt.javascript

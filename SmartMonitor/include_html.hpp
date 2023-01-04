@@ -16,7 +16,7 @@ const char html_header[] PROGMEM = R"rawliteral(
 <div id="conf_page" class="row">chargement...</div>
 <div class="col-md-12 mt-2">
   <div class="input-group justify-content-end">
-    <button type="button" class="btn btn-info" id="newpage" onclick="addpage(this)">Nouvelle page</button>
+    <button type="button" class="btn btn-info bi-plus-circle" id="newpage" onclick="addpage(this)">&nbsp;Nouvelle page</button>
   </div>
 </div>
 )rawliteral";
@@ -54,7 +54,7 @@ const char html_item[] PROGMEM = R"rawliteral(
 <div class="row pt-1">
   <div class="col-sm-2">
     <div class="input-group">
-      <span class="input-group-text">Titre</span>
+      <span class="input-group-text bi-box-arrow-right"></span>
       <input type="text" class="form-control" name="pages_label_#P#_#I#" value="%CNFLABEL%">
     </div>
   </div>
@@ -95,38 +95,45 @@ const char html_item[] PROGMEM = R"rawliteral(
 
 const char html_hardware[] PROGMEM = R"rawliteral(
 <div class="row pt-1">
-<div class="col-md-4">
+<div class="col-md-1">
   <div class="input-group">
     <label class="input-group-text">pin</label>
     <!-- input type="number" class="form-control" name="gpio_pin_#H#" value="%CNFPIN%" -->
     <select class="form-select" name="gpio_pin_#H#" >
-      <option value="0" %CNFH_P0%></option>
+      <option value="-1" %CNFH_Pnone%></option>
       %CNFH_PINLIST%
     </select>
   </div>
 </div>
-<div class="col-md-4">
+<div class="col-md-5">
   <div class="input-group">
     <label class="input-group-text">Nom</label>
     <input type="text" class="form-control" name="gpio_name_#H#" value="%CNFNAME%">
   </div>
 </div>
-<div class="col-sm-4">
+<div class="col-sm-3">
   <div class="input-group">
     <label class="input-group-text">Type</label>
     <select class="form-select" name="gpio_type_#H#" >
-      <option value="0" %CNFH_T0%>binarySensor</option>
-      <option value="1" %CNFH_T1% disabled>numberSensor</option>
-      <option value="2" %CNFH_T2% disabled>stateSensor</option>
-      <option value="3" %CNFH_T3% disabled>tagScanner</option>
-      <option value="4" %CNFH_T4% disabled>switchOutput</option>
-      <option value="5" %CNFH_T5% disabled>lockOutput</option>
-      <option value="6" %CNFH_T6% disabled>lightOutput</option>
+      <option value="0" %CNFH_T0%>noIO</option>
+      <option value="1" %CNFH_T1%>buzzerTouch</option>
+      <option value="2" %CNFH_T2%>binarySensor</option>
+      <option value="3" %CNFH_T3%>numberSensor</option>
+      <option value="4" %CNFH_T4% disabled>stateSensor</option>
+      <option value="5" %CNFH_T5% disabled>tagScanner</option>
+      <option value="6" %CNFH_T6% disabled>switchOutput</option>
+      <option value="7" %CNFH_T7% disabled>lockOutput</option>
+      <option value="8" %CNFH_T8% disabled>lightOutput</option>
     </select>
   </div>
 </div>
+<div class="col-md-3">
+  <div class="input-group flex-nowrap">
+    <span class="input-group-text">Y = X *</span>
+    <input type="text" class="form-control" name="gpio_coefa_#H#" %CNFH_COEFOFF%>
+    <span class="input-group-text">+</span>
+    <input type="text" class="form-control" name="gpio_coefb_#H#" %CNFH_COEFOFF%>
+  </div>
 </div>
-)rawliteral";
-
-const char js_loadselect[] PROGMEM = R"rawliteral(
+</div>
 )rawliteral";

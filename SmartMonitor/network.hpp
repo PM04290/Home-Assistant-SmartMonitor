@@ -5,6 +5,9 @@
 #include <ESPmDNS.h>
 #include <EEPROM.h>
 #include <Update.h>
+#ifdef USE_ETHERNET
+#include <ETH.h>
+#endif
 #include "display.h"
 
 #include "include_html.hpp"
@@ -21,11 +24,13 @@ char Wifi_pass[EEPROM_TEXT_SIZE] = "";  // WiFi password
 char AP_ssid[10] = "smartmon0";  // AP WiFi SSID
 char AP_pass[9] = "12345678";   // AP WiFi password
 
-char mqtt_host[EEPROM_TEXT_SIZE] = "192.168.0.100";
+char mqtt_host[EEPROM_TEXT_SIZE] = "192.168.0.14";
 char mqtt_user[EEPROM_TEXT_SIZE] = "mqttuser";
 char mqtt_pass[EEPROM_TEXT_SIZE] = "mqttpass";
 
 char LumDevID[] = "DisplayBrightness0";  // Device unique ID
+
+static bool eth_connected = false;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -232,25 +237,25 @@ void onIndexRequest(AsyncWebServerRequest *request) {
         } else if (html.indexOf("%GENHTMLGPIO%") > 0)
         {
           String blocGPIO = "";
-          for (int n = 0; n < MAX_GPIO /*nbGPIO*/; n++)
+          for (int n = 0; n < MAX_GPIO; n++)
           {
             String blocH = html_hardware;
             blocH.replace("#H#", String(n));
             // pin list
-            //blocH.replace("%CNFPIN%", String(GPIOs[n]._pin));
             String blocPins = "";
             for (byte p = 0; p < sizeof(pinAvailable); p++)
             {
               String sPin = String(pinAvailable[p]);
               blocPins += "<option value='" + sPin + "' " + (GPIOs[n]._pin == pinAvailable[p] ? "selected" : "") + ">" + sPin + "</option>";
             }
-            blocH.replace("%CNFH_P0%", (GPIOs[n]._pin == 0 ? "selected" : ""));
+            blocH.replace("%CNFH_Pnone%", (GPIOs[n]._pin == -1 ? "selected" : ""));
             blocH.replace("%CNFH_PINLIST%", blocPins);
             blocH.replace("%CNFNAME%", String(GPIOs[n]._name));
             for (int t = 0; t < (int)HardwareType::lastHardwareType; t++) {
               String tcnf = "%CNFH_T" + String(t) + "%";
               blocH.replace(tcnf, (int)GPIOs[n]._htype == t ? "selected" : "");
             }
+            blocH.replace("%CNFH_COEFOFF%", GPIOs[n]._htype == HardwareType::numberSensor ? "": "disabled");
             blocGPIO += blocH;
           }
           html.replace("<!--%GENHTMLGPIO%-->", blocGPIO);
@@ -499,6 +504,63 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
   }
 }
 
+void WiFiEvent(WiFiEvent_t event) {
+  switch (event) {
+    case SYSTEM_EVENT_WIFI_READY:
+      DEBUGln("WiFi ready");
+      break;
+    case SYSTEM_EVENT_STA_START:
+      DEBUG("WiFi search AP");
+      break;
+    case SYSTEM_EVENT_STA_CONNECTED:
+      DEBUGln("\nWiFi AP connected");
+      break;
+    case SYSTEM_EVENT_STA_GOT_IP:
+      DEBUGln("WiFi connected");
+      DEBUG("IP address: ");
+      DEBUGln(WiFi.localIP());
+      break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+      DEBUGln("WiFi lost connection");
+      break;
+    // For Ethernet
+#ifdef USE_ETHERNET
+    case SYSTEM_EVENT_ETH_START:
+      DEBUGln("ETH Started");
+      //set eth hostname here
+      ETH.setHostname(AP_ssid);
+      break;
+    case SYSTEM_EVENT_ETH_CONNECTED:
+      DEBUGln("ETH Connected");
+      break;
+    case SYSTEM_EVENT_ETH_GOT_IP:
+      DEBUG("ETH MAC: ");
+      DEBUG(ETH.macAddress());
+      DEBUG(", IPv4: ");
+      DEBUG(ETH.localIP());
+      if (ETH.fullDuplex()) {
+        DEBUG(", FULL_DUPLEX");
+      }
+      DEBUG(", ");
+      DEBUG(ETH.linkSpeed());
+      DEBUGln("Mbps");
+      eth_connected = true;
+      break;
+    case SYSTEM_EVENT_ETH_DISCONNECTED:
+      DEBUGln("ETH Disconnected");
+      eth_connected = false;
+      break;
+    case SYSTEM_EVENT_ETH_STOP:
+      DEBUGln("ETH Stopped");
+      eth_connected = false;
+      break;
+    default:
+      DEBUGf("[WiFi-event] %d\n", event);
+      break;
+#endif
+  }
+}
+
 void configWifi() {
   char txt[40];
   bool wifiok = false;
@@ -509,6 +571,10 @@ void configWifi() {
   lcd.print("  Version: ");
   lcd.println(SM_VERSION);
 
+  WiFi.onEvent(WiFiEvent);
+#ifdef USE_ETHERNET
+  ETH.begin();
+#else
   // Mode normal
   DEBUG( "Wifi search" );
   lcd.print("wifi ");
@@ -551,6 +617,7 @@ void configWifi() {
     lcd.println(AP_ssid);
     lcd.print(WiFi.softAPIP().toString().c_str());
   }
+#endif
 
   if (MDNS.begin(AP_ssid)) {
     MDNS.addService("http", "tcp", 80);
@@ -563,6 +630,7 @@ void configWeb() {
   server.serveStatic("/fonts", SPIFFS, "/fonts");
   server.serveStatic("/css", SPIFFS, "/css");
   server.serveStatic("/i", SPIFFS, "/i");
+  server.serveStatic("/dump", SPIFFS, "/dump");
   server.serveStatic("/config.json", SPIFFS, "/config.json");
   server.on("/", HTTP_GET, onIndexRequest);
   server.on("/doconfig", HTTP_POST, onConfigRequest);
@@ -585,7 +653,6 @@ void configWeb() {
     delay(500);
     ESP.restart();
   });
-  /*
   server.on("/screendump", HTTP_GET, [] (AsyncWebServerRequest * request)
   {
     SMcontroler.screenDump();
@@ -594,7 +661,6 @@ void configWeb() {
     response->addHeader("Location", "/");
     request->send(response);
   });
-  */
   server.begin();
   ws.onEvent(onEvent);
   server.addHandler(&ws);

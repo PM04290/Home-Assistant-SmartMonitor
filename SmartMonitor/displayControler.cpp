@@ -28,6 +28,7 @@ Xcontroler::Xcontroler()
   _msgWp = 0;
   _msgRp = 0;
   _msgCount = 0;
+  _pinBuzzer = -1;
 }
 
 void Xcontroler::init()
@@ -57,6 +58,11 @@ void Xcontroler::init()
   displayConfig.headerheight = 20;
   displayConfig.cornerradius = CORNER_RADIUS;
   displayConfig.kpadsize = min( displayConfig.width / 6, (displayConfig.height - displayConfig.headerheight) / 4);
+}
+
+void Xcontroler::setPinBuzzer(int pin)
+{
+  _pinBuzzer = pin;
 }
 
 void Xcontroler::drawBackground()
@@ -231,6 +237,7 @@ bool Xcontroler::doChangePage(const char* pageID)
   } else {
     _defaultPage->show();
   }
+  return true;
 }
 
 void Xcontroler::doQuitPage(Xpage* page)
@@ -267,7 +274,13 @@ void Xcontroler::loop()
   }
   Xitem* item = detectTouch();
   if (item != NULL) {
-    DEBUGf("touch:%s\n", item->getTitle());
+    if (_pinBuzzer > 0)
+    {
+      ledcSetup(0, 1200, 12);
+      ledcWrite(0, 2048);
+      delay(300);
+      ledcWrite(0, 0);
+    }
     item->doTouch();
   }
   mqttMsgPop();
@@ -300,6 +313,7 @@ void Xcontroler::dialog(JsonArray texts)
 {
   if (_dlgPage != NULL)
   {
+    _defaultPage->hide();
     _dlgPage->show();
     _dlgPage->drawText(texts);
     lcd.display();
@@ -333,7 +347,7 @@ size_t Xcontroler::readFile(const char * path)
 bool Xcontroler::screenDump(void)
 {
   std::size_t dlen;
-  std::uint8_t* png = (std::uint8_t*)lcd.createPng(&dlen, 0, 0, 10, 10);
+  std::uint8_t* png = (std::uint8_t*)lcd.createPng(&dlen, 0, 0, 120, 80);
   if (!png)
   {
     DEBUGln("error:createPng");
@@ -384,7 +398,7 @@ void Xcontroler::mqttMsgPop()
 
 void Xcontroler::mqttProcess(mqttMsg* msg)
 {
-  //DEBUGf("Process(%d) -> %s = %s\n", _msgCount, msg->topic, msg->payload);
+  DEBUGf("Process(%d) -> %s = %s\n", _msgCount, msg->topic, msg->payload);
   if (memcmp(msg->topic, "smartmonitor/alarm_message", strlen(msg->topic)) == 0)
   {
     //DEBUGf("MSG:%s\n", pl);
@@ -446,10 +460,10 @@ void Xcontroler::mqttProcess(mqttMsg* msg)
                           {
                             //DEBUGf("      set %d float data to %s : %f\n", num, stateAttrib, kv.value().as<float>());
                             datalist += String(kv.value().as<float>(), 1);
-                          } else if (kv.value().is<char*>())
+                          } else if (kv.value().is<String>())
                           {
                             //DEBUGf("      set %d char* data to %s : %s\n", num, stateAttrib, kv.value().as<char*>());
-                            datalist += String(kv.value().as<char*>());
+                            datalist += kv.value().as<String>();
                           }
                           num++;
                         }
@@ -475,10 +489,10 @@ void Xcontroler::mqttProcess(mqttMsg* msg)
                       {
                         //DEBUGf("      set float data to %s : %f\n", stateAttrib, kv.value().as<float>());
                         item->setData(String(kv.value().as<float>()));
-                      } else if (kv.value().is<char*>())
+                      } else if (kv.value().is<String>())
                       {
                         //DEBUGf("      set char* data to %s : %s\n", stateAttrib, kv.value().as<char*>());
-                        item->setData(String(kv.value().as<char*>()));
+                        item->setData(kv.value().as<String>());
                       }
                     }
                   }
