@@ -149,10 +149,10 @@ void setup(void)
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
     EEPROM.commit();
 */
-    displayOrientation = EEPROM.read(0) % 4;
     char code = EEPROM.readChar(1);
-    if (code >= '0' && code <= '9') {
-
+    if (code >= '0' && code <= '9')
+    {
+      displayOrientation = EEPROM.read(0) % 4;
       AP_ssid[8] = code;
       LumDevID[17] = code;
       strcpy(Wifi_ssid, EEPROM.readString(EEPROM_TEXT_OFFSET).c_str());
