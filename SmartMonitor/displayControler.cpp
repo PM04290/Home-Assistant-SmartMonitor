@@ -28,13 +28,22 @@ Xcontroler::Xcontroler()
   _msgWp = 0;
   _msgRp = 0;
   _msgCount = 0;
-  _pinBuzzer = -1;
+  _buzzerPin = -1;
+  _buzzerMode = -1;
 }
 
 void Xcontroler::init()
 {
   lcd.init();
   lcd.setRotation(displayOrientation);
+  /*  uint16_t orig[8];
+    lcd.calibrateTouch(orig, TFT_WHITE, TFT_BLACK, std::max(lcd.width(), lcd.height()) >> 3);
+    for (int i = 0; i < 8; i++) {
+     // cfg.x_min, cfg.y_min, cfg.x_min, cfg.y_max , cfg.x_max, cfg.y_min  , cfg.x_max, cfg.y_max
+      DEBUGln(orig[i]);
+    }
+  */
+
   displayConfig.width = lcd.width();
   displayConfig.height = lcd.height();
   //DEBUGf("display O:%d W:%d H:%d\n", lcd.getRotation(), displayConfig.width, displayConfig.height);
@@ -46,23 +55,32 @@ void Xcontroler::init()
     lcd.setFont(&font_XXS);
   }
   lcd.setCursor(0, 0);
-
-  size_t nb = readFile("/i/flashscreen.png");
-  if (nb)
-  {
-    lcd.drawPng(tmpIcon, nb, lcd.width() / 2 - 64, 0);
-    lcd.display();
-    lcd.setCursor(0, 128);
-  }
-
   displayConfig.headerheight = 20;
   displayConfig.cornerradius = CORNER_RADIUS;
   displayConfig.kpadsize = min( displayConfig.width / 6, (displayConfig.height - displayConfig.headerheight) / 4);
 }
 
-void Xcontroler::setPinBuzzer(int pin)
+void Xcontroler::prepareLoading()
 {
-  _pinBuzzer = pin;
+  size_t nb = readFile("/i/flashscreen.png");
+  if (nb)
+  {
+    int y = lcd.getCursorY();
+    LGFX_Sprite sp(&lcd);
+    sp.createSprite(128, 128);
+    sp.drawPng(tmpIcon, nb, 0, 0);
+    sp.pushSprite(lcd.width() / 2 - 64, y);
+    sp.deleteSprite();
+    lcd.setCursor(0, y + 128);
+  }
+  lcd.print("Welcome to SmarMonitor version: ");
+  lcd.println(SM_VERSION);
+}
+
+void Xcontroler::setPinBuzzer(int pin, int mode)
+{
+  _buzzerPin = pin;
+  _buzzerMode = mode;
 }
 
 void Xcontroler::drawBackground()
@@ -274,12 +292,22 @@ void Xcontroler::loop()
   }
   Xitem* item = detectTouch();
   if (item != NULL) {
-    if (_pinBuzzer > 0)
+    if (_buzzerPin > 0)
     {
-      ledcSetup(0, 1200, 12);
-      ledcWrite(0, 2048);
-      delay(300);
-      ledcWrite(0, 0);
+      if (_buzzerMode == 1) { // 1 pulse
+        digitalWrite(_buzzerPin, HIGH);
+        delay(60);
+        digitalWrite(_buzzerPin, LOW);
+      }
+      if (_buzzerMode == 2) { // PWM
+        ledcSetup(0, 1200, 12); // canal 0, 1200 Hz, 12bit
+        ledcWrite(0, 2048); // 50%
+        delay(60);
+        ledcWrite(0, 0);
+      }
+      if (_buzzerMode == 3) { // I2S
+        // soon
+      }
     }
     item->doTouch();
   }
@@ -294,19 +322,19 @@ void Xcontroler::setScratchMode()
   lcd.setFont(&font_S);
   lcd.println("Touch again to restart\n");
   lcd.setFont(&font_XXS);
-  lcd.println("Taille XXS");
+  lcd.println("Font XXS");
   lcd.setFont(&font_XS);
-  lcd.println("Taille XS");
+  lcd.println("Font XS");
   lcd.setFont(&font_S);
-  lcd.println("Taille S");
+  lcd.println("Font S");
   lcd.setFont(&font_M);
-  lcd.println("Taille M");
+  lcd.println("Font M");
   lcd.setFont(&font_L);
-  lcd.println("Taille L");
+  lcd.println("Font L");
   lcd.setFont(&font_XL);
-  lcd.println("Taille XL");
+  lcd.println("Font XL");
   lcd.setFont(&font_XXL);
-  lcd.println("Taille XXL");
+  lcd.println("Font XXL");
 }
 
 void Xcontroler::dialog(JsonArray texts)
@@ -347,7 +375,7 @@ size_t Xcontroler::readFile(const char * path)
 bool Xcontroler::screenDump(void)
 {
   std::size_t dlen;
-  std::uint8_t* png = (std::uint8_t*)lcd.createPng(&dlen, 0, 0, 120, 80);
+  std::uint8_t* png = (std::uint8_t*)lcd.createPng(&dlen, 0, 0, 60, 80);
   if (!png)
   {
     DEBUGln("error:createPng");

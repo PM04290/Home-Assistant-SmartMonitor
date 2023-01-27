@@ -27,9 +27,17 @@ struct GPIOdef {
     //DEBUGf("gpio %s\n",_name);
     switch (htype)
     {
-      case HardwareType::buzzerTouch:
-        SMcontroler.setPinBuzzer(pin);
-        ledcAttachPin(pin, 0);
+      case HardwareType::buzzer1Pulse:
+        SMcontroler.setPinBuzzer(pin,1);
+        //ledcAttachPin(pin, 0);
+        pinMode(pin, OUTPUT);
+        break;
+      case HardwareType::buzzerPWM:
+        SMcontroler.setPinBuzzer(pin,2);
+        ledcAttachPin(pin, 0); // canal 0
+        break;
+      case HardwareType::SoundI2S:
+        SMcontroler.setPinBuzzer(pin,3);
         break;
       case HardwareType::binarySensor:
         pinMode(pin, INPUT_PULLUP);

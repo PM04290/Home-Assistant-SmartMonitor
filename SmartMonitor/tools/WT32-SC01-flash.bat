@@ -1,4 +1,4 @@
-set /p usedcom=Téléversement de "data" via port COM
+set /p usedcom=Televersement de "data" via port COM
 echo Utilisation de COM%usedcom%
 C:\Users\Admin\AppData\Local\Arduino15\packages\esp32\tools\mkspiffs\0.2.3\mkspiffs.exe -c ../data -p 256 -b 4096 -s 1507328 SmartMonitor.spiffs.bin
 C:\Users\Admin\AppData\Local\Arduino15\packages\esp32\tools\esptool_py\3.0.0\esptool.exe --chip esp32 --baud 921600 --port com%usedcom% --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x00290000 SmartMonitor.spiffs.bin

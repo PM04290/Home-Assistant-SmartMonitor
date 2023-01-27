@@ -127,28 +127,20 @@ void setup(void)
 #endif
   DEBUGln("\nDebug start");
 
-  if (!SPIFFS.begin()) {
-    DEBUGln("SPIFFS Mount failed");
-  } else {
-    DEBUGln("SPIFFS Mount succesfull");
-    listDir("/");
-    DEBUGf("SPIFFS used %d / total %d\n", SPIFFS.usedBytes(), SPIFFS.totalBytes());
-  }
-
   if (!EEPROM.begin(EEPROM_MAX_SIZE))
   {
     DEBUGln("failed to initialise EEPROM");
   } else {
-/*
-    EEPROM.write(0, displayOrientation);
-    EEPROM.writeChar(1, AP_ssid[8]);
-    EEPROM.writeString(EEPROM_TEXT_OFFSET, Wifi_ssid);
-    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 1), Wifi_pass);
-    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);
-    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 3), mqtt_user);
-    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
-    EEPROM.commit();
-*/
+    /* uncomment to initialisze EEPROM with code variable, juste one run with that
+        EEPROM.write(0, displayOrientation);
+        EEPROM.writeChar(1, AP_ssid[8]);
+        EEPROM.writeString(EEPROM_TEXT_OFFSET, Wifi_ssid);
+        EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 1), Wifi_pass);
+        EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);
+        EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 3), mqtt_user);
+        EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
+        EEPROM.commit();
+    */
     char code = EEPROM.readChar(1);
     if (code >= '0' && code <= '9')
     {
@@ -170,6 +162,15 @@ void setup(void)
     DEBUGln(mqtt_pass);
   }
   SMcontroler.init();
+
+  if (!SPIFFS.begin()) {
+    DEBUGln("SPIFFS Mount failed");
+  } else {
+    DEBUGln("SPIFFS Mount succesfull");
+    listDir("/");
+    DEBUGf("SPIFFS used %d / total %d\n", SPIFFS.usedBytes(), SPIFFS.totalBytes());
+  }
+  SMcontroler.prepareLoading();
   configWifi();
 
   byte mac[6];
@@ -204,14 +205,11 @@ void setup(void)
   mqtt.onDisconnected(onMqttDisconnected);
   if (mqtt.begin(mqtt_host, mqtt_user, mqtt_pass))
   {
-    DEBUGln("mqtt ok");
-    lcd.println("mqtt ok");
+    DEBUGln("mqtt configured");
   } else {
     DEBUGln("mqtt error");
-    lcd.println("mqtt error");
   }
   configWeb();
-
   int32_t x, y;
   if (lcd.getTouch(&x, &y))
   {
@@ -359,7 +357,7 @@ void loadItems(Xpage* page, JsonArray itemList)
           }
           //DEBUGf("          add command\n");
           page->addItem(new XitemCommand(i, x, y, displayConfig.zonewidth, displayConfig.zoneheight, COLOR_CYAN, title, BtnAction::ChangePage))
-          ->setMQTTconfig(tmpMQTT, (DataType)(int)item["datatype"].as<int>())
+          ->setMQTTconfig(tmpMQTT, item["source"].as<const char*>(), item["icon"].as<const char*>(), item["unit"].as<const char*>())
           ->setTargetPage(targetPage); // en dernier pour indiquer l'action "changePage"
           free(tmpMQTT);
           itemAdded = true;
@@ -370,18 +368,18 @@ void loadItems(Xpage* page, JsonArray itemList)
           itemAdded = true;
         }
       }
-      if (bAction == BtnAction::Display && strlen(targetMQTT) > 0 && item.containsKey("datatype"))
+      if (bAction == BtnAction::Display && strlen(targetMQTT) > 0)
       {
         //DEBUGf("        Display %s\n", title);
         page->addItem(new XitemInfo(i, x, y, displayConfig.zonewidth, displayConfig.zoneheight, COLOR_CYAN, title))
-        ->setMQTTconfig(targetMQTT, (DataType)(int)item["datatype"].as<int>());
+        ->setMQTTconfig(targetMQTT, item["source"].as<const char*>(), item["icon"].as<const char*>(), item["unit"].as<const char*>());
         itemAdded = true;
       }
-      if (bAction == BtnAction::Command && strlen(targetMQTT) > 0 && item.containsKey("datatype"))
+      if (bAction == BtnAction::Command && strlen(targetMQTT) > 0)
       {
         //DEBUGf("        Command %s\n", title);
         page->addItem(new XitemCommand(i, x, y, displayConfig.zonewidth, displayConfig.zoneheight, COLOR_CYAN, title, BtnAction::Command))
-        ->setMQTTconfig(targetMQTT, (DataType)(int)item["datatype"].as<int>());
+        ->setMQTTconfig(targetMQTT, item["source"].as<const char*>(),  item["icon"].as<const char*>(), item["unit"].as<const char*>());
         itemAdded = true;
       }
       if (!itemAdded)

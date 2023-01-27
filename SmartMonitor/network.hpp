@@ -24,7 +24,7 @@ char Wifi_pass[EEPROM_TEXT_SIZE] = "";  // WiFi password
 char AP_ssid[10] = "smartmon0";  // AP WiFi SSID
 char AP_pass[9] = "12345678";   // AP WiFi password
 
-char mqtt_host[EEPROM_TEXT_SIZE] = "192.168.0.14";
+char mqtt_host[EEPROM_TEXT_SIZE] = "192.168.0.100";
 char mqtt_user[EEPROM_TEXT_SIZE] = "mqttuser";
 char mqtt_pass[EEPROM_TEXT_SIZE] = "mqttpass";
 
@@ -85,7 +85,8 @@ String getHTMLforPage(int numpage, Xpage* page)
   int maxItem = displayConfig.nbcols * displayConfig.nbrows;
   for (int i = 0; i < maxItem; i++)
   {
-    replaceGen += "<div id='confitems_" + String(numpage) + "_" + String(i) + "' class='flex-wrap'>chargement...</div>\n";
+    //replaceGen += "<div id='confitems_" + String(numpage) + "_" + String(i) + "' class='flex-wrap'>chargement...</div>\n";
+    replaceGen += "<tr id='confitems_" + String(numpage) + "_" + String(i) + "'></tr>\n";
   }
   //
   blocP.replace("%GENITEMS%", replaceGen);
@@ -132,10 +133,16 @@ String getHTMLforItems(int numpage, Xpage* page, int numitem)
           blocI.replace("%CNFPAGE%", "");
           break;
       }
+      blocI.replace("%CNFSRC%", String(item->getSource()));
+      blocI.replace("%CNFICON%", String(item->getIcon()));
+      blocI.replace("%CNFUNIT%", String(item->getUnit()));
+      //
       blocI.replace("%CNFI_MQTTOFF%", ((int)item->getAction() == 2 || (int)item->getAction() == 3 || (int)item->getAction() == 4) ? "" : "disabled");
-      blocI.replace("%CNFI_TYPEOFF%", item->isSuscribeMQTT() ? "" : "disabled");
+      blocI.replace("%CNFI_SRCOFF%", item->isSuscribeMQTT() ? "" : "disabled");
+      blocI.replace("%CNFI_ICONOFF%", item->isSuscribeMQTT() ? "" : "disabled");
+      blocI.replace("%CNFI_UNITOFF%", item->isSuscribeMQTT() ? "" : "disabled");
       blocI.replace("%CNFI_PAGEOFF%", ((int)item->getAction() == 2) ? "" : "disabled");
-      blocI.replace("%CNFTYPE%", String((int)item->getDataType()));
+      //blocI.replace("%CNFTYPE%", String((int)item->getDataType()));
       lineok = true;
     }
   }
@@ -147,15 +154,15 @@ String getHTMLforItems(int numpage, Xpage* page, int numitem)
       blocI.replace(kcnf, (int)BtnAction::None == n ? "selected" : "");
     }
     blocI.replace("%CNFMQTT%", "");
-    for (int n = 0; n < (int)DataType::lastDataType; n++) {
-      String kcnf = "%CNFI_T" + String(n) + "%";
-      blocI.replace(kcnf, (int)DataType::implicit == n ? "selected" : "");
-    }
+    blocI.replace("%CNFSRC%", "");
+    blocI.replace("%CNFICON%", "");
+    blocI.replace("%CNFUNIT%", "");
     blocI.replace("%CNFPAGE%", "");
     blocI.replace("%CNFI_MQTTOFF%", "disabled");
-    blocI.replace("%CNFI_TYPEOFF%", "disabled");
+    blocI.replace("%CNFI_SRCOFF%", "disabled");
+    blocI.replace("%CNFI_ICONOFF%", "disabled");
+    blocI.replace("%CNFI_UNITOFF%", "disabled");
     blocI.replace("%CNFI_PAGEOFF%", "disabled");
-    blocI.replace("%CNFTYPE%", "0");
   }
   return blocI;
 }
@@ -255,7 +262,7 @@ void onIndexRequest(AsyncWebServerRequest *request) {
               String tcnf = "%CNFH_T" + String(t) + "%";
               blocH.replace(tcnf, (int)GPIOs[n]._htype == t ? "selected" : "");
             }
-            blocH.replace("%CNFH_COEFOFF%", GPIOs[n]._htype == HardwareType::numberSensor ? "": "disabled");
+            blocH.replace("%CNFH_COEFOFF%", GPIOs[n]._htype == HardwareType::numberSensor ? "" : "disabled");
             blocGPIO += blocH;
           }
           html.replace("<!--%GENHTMLGPIO%-->", blocGPIO);
@@ -300,7 +307,7 @@ void onConfigRequest(AsyncWebServerRequest * request) {
             Jconfig["row"] = p->value();
           } else {
             // exemple : pages_action_0_2
-            // items[2].action of pages[0] 
+            // items[2].action of pages[0]
             //      or : pages_title_0
             // title of pages[0]
             String keybloc = getValue(str, '_', 0);
@@ -523,7 +530,7 @@ void WiFiEvent(WiFiEvent_t event) {
     case SYSTEM_EVENT_STA_DISCONNECTED:
       DEBUGln("WiFi lost connection");
       break;
-    // For Ethernet
+      // For Ethernet
 #ifdef USE_ETHERNET
     case SYSTEM_EVENT_ETH_START:
       DEBUGln("ETH Started");
@@ -565,30 +572,30 @@ void configWifi() {
   char txt[40];
   bool wifiok = false;
 
+  WiFi.onEvent(WiFiEvent);
   DEBUGln(WiFi.macAddress());
   lcd.print("MAC: ");
-  lcd.print(WiFi.macAddress());
-  lcd.print("  Version: ");
-  lcd.println(SM_VERSION);
+  lcd.println(WiFi.macAddress());
 
-  WiFi.onEvent(WiFiEvent);
 #ifdef USE_ETHERNET
   ETH.begin();
 #else
   // Mode normal
-  DEBUG( "Wifi search" );
-  lcd.print("wifi ");
-  lcd.print(Wifi_ssid);
-  WiFi.begin(Wifi_ssid, Wifi_pass);
-  int tentativeWiFi = 0;
-  // Attente de la connexion au réseau WiFi / Wait for connection
-  while ( WiFi.status() != WL_CONNECTED && tentativeWiFi < 20) {
-    lcd.print(".");
-    delay( 500 ); DEBUG( "." );
-    tentativeWiFi++;
+  if (strlen(Wifi_ssid)) {
+    DEBUG( "Wifi search" );
+    lcd.print("wifi ");
+    lcd.print(Wifi_ssid);
+    int tentativeWiFi = 0;
+    WiFi.begin(Wifi_ssid, Wifi_pass);
+    // Attente de la connexion au réseau WiFi / Wait for connection
+    while ( WiFi.status() != WL_CONNECTED && tentativeWiFi < 20) {
+      lcd.print(".");
+      delay( 500 ); DEBUG( "." );
+      tentativeWiFi++;
+    }
+    DEBUGln("");
+    wifiok = WiFi.status() == WL_CONNECTED;
   }
-  DEBUGln("");
-  wifiok = WiFi.status() == WL_CONNECTED;
   if (wifiok) {
     // Connexion WiFi établie / WiFi connexion is OK
     DEBUGf("Connected to %s\n", Wifi_ssid );
@@ -667,5 +674,4 @@ void configWeb() {
   Update.onProgress(updateProgress);
   DEBUGln ("HTTP server started");
   lcd.println("web server ready");
-
 }

@@ -34,8 +34,9 @@ Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c
   _pageID = NULL;
   _dispMode = displayMode::title_text;
   _iconPath = NULL;
+  _dataIcon = "";
   _dataUnit = "";
-  _datatype = DataType::implicit;
+  //_datatype = DataType::implicit;
   _iconSize = 48;
 }
 
@@ -66,7 +67,7 @@ Xitem* Xitem::setHAdevice()
   return this;
 }
 
-Xitem* Xitem::setMQTTconfig(const char* target, DataType datatype)
+Xitem* Xitem::setMQTTconfig(const char* target, const char* source, const char* icon, const char* unit)
 {
   String str(target);
   String sbase = getValue(str, ';', 0);
@@ -97,225 +98,29 @@ Xitem* Xitem::setMQTTconfig(const char* target, DataType datatype)
     strcpy(_mqttcommand, sbase.c_str());
     strcat(_mqttcommand, scommand.c_str());
   }
-  _datatype = datatype;
+  //
+  _dataSource = (char*)malloc(strlen(source) + 1);
+  strcpy(_dataSource, source);
+  _dataIcon = (char*)malloc(strlen(icon) + 1);
+  strcpy(_dataIcon, icon);
   _iconPath = new char[50];
-  switch (_datatype)
-  {
-    case DataType::alarm_state:
-    case DataType::weather_state:
-      strcpy(_iconPath, "/i/s48-error.png");
-      _dispMode = displayMode::data_icon;
-      break;
-    case DataType::cover_state:
-    case DataType::light_state:
-    case DataType::lock_state:
-    case DataType::switch_state:
-    case DataType::binary_state:
-      strcpy(_iconPath, "/i/s48-error.png");
-      _dispMode = displayMode::data_icon | displayMode::title_text;
-      break;
-    case DataType::apparent_power:
-      strcpy(_iconPath, "/i/s48-power.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "VA";
-      break;
-    case DataType::aqi:
-      strcpy(_iconPath, "/i/s48-aqi.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      break;
-    case DataType::atmospheric_pressure:
-      strcpy(_iconPath, "/i/s48-pressure.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "hPa";
-      break;
-    case DataType::battery:
-      strcpy(_iconPath, "/i/s48-battery.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "%";
-      break;
-    case DataType::carbon_dioxide:
-      strcpy(_iconPath, "/i/s48-co2.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "ppm";
-      break;
-    case DataType::carbon_monoxide:
-      strcpy(_iconPath, "/i/s48-co.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "ppm";
-      break;
-    case DataType::current:
-      strcpy(_iconPath, "/i/s48-current.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "A";
-      break;
-    case DataType::distance:
-      strcpy(_iconPath, "/i/s48-distance.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "m";
-      break;
-    case DataType::duration:
-      strcpy(_iconPath, "/i/s48-duration.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "s";
-      break;
-    case DataType::energy:
-      strcpy(_iconPath, "/i/s48-energy.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "kWh";
-      break;
-    case DataType::frequency:
-      strcpy(_iconPath, "/i/s48-frequency.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "Hz";
-      break;
-    case DataType::gas:
-      strcpy(_iconPath, "/i/s48-gas.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "m³";
-      break;
-    case DataType::humidity:
-      strcpy(_iconPath, "/i/s48-humidity.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "%";
-      break;
-    case DataType::illuminance:
-      strcpy(_iconPath, "/i/s48-illuminance.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "lx";
-      break;
-    case DataType::irradiance:
-      strcpy(_iconPath, "/i/s48-irradiance.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "W/m²";
-      break;
-    case DataType::moisture:
-      strcpy(_iconPath, "/i/s48-humidity.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "%";
-      break;
-    case DataType::monetary:
-      strcpy(_iconPath, "/i/s48-monetary.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "";
-      break;
-    case DataType::nitrogen_dioxide:
-      strcpy(_iconPath, "/i/s48-no2.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::nitrogen_monoxide:
-      strcpy(_iconPath, "/i/s48-no.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::nitrous_oxide:
-      strcpy(_iconPath, "/i/s48-n2o.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::ozone:
-      strcpy(_iconPath, "/i/s48-o3.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::pm1:
-    case DataType::pm25:
-    case DataType::pm10:
-      strcpy(_iconPath, "/i/s48-pm.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::power:
-      strcpy(_iconPath, "/i/s48-power.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "W";
-      break;
-    case DataType::power_factor:
-      strcpy(_iconPath, "/i/s48-power-factor.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "%";
-      break;
-    case DataType::precipitation:
-      strcpy(_iconPath, "/i/s48-precipitation.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "mm";
-      break;
-    case DataType::precipitation_intensity:
-      strcpy(_iconPath, "/i/s48-precipitation.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "mm/j";
-      break;
-    case DataType::pressure:
-      strcpy(_iconPath, "/i/s48-pressure.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "hPa";
-      break;
-    case DataType::reactive_power:
-      strcpy(_iconPath, "/i/s48-power.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "var";
-      break;
-    case DataType::signal_strength:
-      strcpy(_iconPath, "/i/s48-signal.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "dBm";
-      break;
-    case DataType::sound_pressure:
-      strcpy(_iconPath, "/i/s48-sound.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "dBA";
-      break;
-    case DataType::speed:
-      strcpy(_iconPath, "/i/s48-speed.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "Km/h";
-      break;
-    case DataType::sulphur_dioxide:
-      strcpy(_iconPath, "/i/s48-so2.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::temperature:
-      strcpy(_iconPath, "/i/s48-temperature.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "°";
-      break;
-    case DataType::volatile_organic_compounds:
-      strcpy(_iconPath, "/i/s48-cov.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "µg/m³";
-      break;
-    case DataType::voltage:
-      strcpy(_iconPath, "/i/s48-voltage.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "V";
-      break;
-    case DataType::volume:
-    case DataType::water:
-      strcpy(_iconPath, "/i/s48-volume.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "L";
-      break;
-    case DataType::weight:
-      strcpy(_iconPath, "/i/s48-weight.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "Kg";
-      break;
-    case DataType::wind_speed:
-      strcpy(_iconPath, "/i/s48-wind-speed.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "Km/h";
-      break;
-    case DataType::elevation:
-      strcpy(_iconPath, "/i/s48-elevation.png");
-      _dispMode = displayMode::static_icon | displayMode::data_text;
-      _dataUnit = "°";
-      break;
-    default:
-      strcpy(_iconPath, "/i/s48-error.png");
-      _dispMode = displayMode::title_text;
-      break;
+  strcpy(_iconPath, "/i/s48-error.png");
+  if (strstr(_dataSource, "alarm_control") || strstr(_dataSource, "weather")) {
+    _dispMode = displayMode::data_icon;
   }
+  if (strstr(_dataSource, "binary_sensor")
+      || strstr(_dataSource, "switch")
+      || strstr(_dataSource, "cover")
+      || strstr(_dataSource, "lock")
+      || strstr(_dataSource, "light")) {
+    _dispMode = displayMode::data_icon | displayMode::title_text;
+  }
+  if (_dispMode == displayMode::title_text && strlen(icon)) {
+    sprintf(_iconPath, "/i/s48-%s.png", icon);
+    _dispMode = displayMode::static_icon | displayMode::data_text;
+  }
+  _dataUnit = (char*)malloc(strlen(unit) + 1);
+  strcpy(_dataUnit, unit);
   return this;
 }
 
@@ -392,14 +197,24 @@ char* Xitem::getTargetPage()
   return _pageID;
 }
 
-DataType Xitem::getDataType()
-{
-  return _datatype;
-}
-
 BtnAction Xitem::getAction()
 {
   return _action;
+}
+
+char* Xitem::getIcon()
+{
+  return _dataIcon;
+}
+
+char* Xitem::getUnit()
+{
+  return _dataUnit;
+}
+
+char* Xitem::getSource()
+{
+  return _dataSource;
 }
 
 int32_t Xitem::x()
@@ -584,42 +399,25 @@ void XitemInfo::setData(String Sdata)
   _data = Sdata;
   if (_dispMode & displayMode::data_icon)
   {
-    switch (_datatype)
-    {
-      case DataType::alarm_state:
-        _iconSize = 60;
-        sprintf(_iconPath, "/i/d60-acp-%s.png", _data.c_str());
-        break;
-      case DataType::weather_state:
-        _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
-        break;
-      case DataType::cover_state:
-        _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
-        break;
-      case DataType::light_state:
-        _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-light-%s.png", _data.c_str());
-        break;
-      case DataType::lock_state:
-        _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
-        break;
-      case DataType::switch_state:
-        _data.toLowerCase();
-        sprintf(_iconPath, "/i/d48-switch-%s.png", _data.c_str());
-        break;
-      case DataType::binary_state:
-        _data.toLowerCase();
-        if (_data == "off") {
-          _data = "false";
-        }
-        if (_data == "on") {
-          _data = "true";
-        }
-        sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
-        break;
+    _data.toLowerCase();
+    if (strstr(_dataSource, "alarm_control")) {
+      _iconSize = 60;
+      sprintf(_iconPath, "/i/d60-acp-%s.png", _data.c_str());
+    }
+    if (strstr(_dataSource, "weather")) {
+      sprintf(_iconPath, "/i/d48-%s.png", _data.c_str());
+    }
+    if (strstr(_dataSource, "cover") && strstr(_dataSource, "lock")) {
+      sprintf(_iconPath, "/i/d48-cover-%s.png", _data.c_str());
+    }
+    if (strstr(_dataSource, "light")) {
+      sprintf(_iconPath, "/i/d48-light-%s.png", _data.c_str());
+    }
+    if (strstr(_dataSource, "switch")) {
+      sprintf(_iconPath, "/i/d48-switch-%s.png", _data.c_str());
+    }
+    if (strstr(_dataSource, "binary_sensor")) {
+      sprintf(_iconPath, "/i/d48-%s-%s.png", _dataIcon, _data.c_str());
     }
   }
   if (isVisible()) {
@@ -645,7 +443,6 @@ void XitemInfo::draw(bool pressed)
   }
   _sprite->setTextSize(1);
   _sprite->setTextColor(_color);
-  //_sprite->drawRoundRect( 0, 0 , _w, _h, displayConfig.cornerradius, COLOR_GRAY);
 
   int32_t xT = _w / 2; // au centre
   int32_t yT = _h / 3;
@@ -743,32 +540,23 @@ bool XitemCommand::doTouch()
     return SMcontroler.doChangePage(_pageID);
   }
   DEBUGln("doTouch Command");
-  switch (_datatype) {
-    case DataType::switch_state:
-    case DataType::light_state:
-      if (_data == "on") {
-        return mqtt.publish(_mqttcommand, "OFF");
-      }
-      if (_data == "off") {
-        return mqtt.publish(_mqttcommand, "ON");
-      }
-      break;
-    case DataType::lock_state:
-      if (_data == "lock") {
-        return mqtt.publish(_mqttcommand, "unlock");
-      }
-      if (_data == "unlock") {
-        return mqtt.publish(_mqttcommand, "lock");
-      }
-      break;
-    case DataType::cover_state:
-      if (_data == "closed") {
-        return mqtt.publish(_mqttcommand, "open");
-      }
-      if (_data == "open") {
-        return mqtt.publish(_mqttcommand, "close");
-      }
-      break;
+  if (_data == "on") {
+    return mqtt.publish(_mqttcommand, "OFF");
+  }
+  if (_data == "off") {
+    return mqtt.publish(_mqttcommand, "ON");
+  }
+  if (_data == "lock") {
+    return mqtt.publish(_mqttcommand, "unlock");
+  }
+  if (_data == "unlock") {
+    return mqtt.publish(_mqttcommand, "lock");
+  }
+  if (_data == "closed") {
+    return mqtt.publish(_mqttcommand, "open");
+  }
+  if (_data == "open") {
+    return mqtt.publish(_mqttcommand, "close");
   }
   return false;
 }

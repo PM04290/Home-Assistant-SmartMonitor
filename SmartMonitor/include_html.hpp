@@ -12,6 +12,12 @@ const char html_header[] PROGMEM = R"rawliteral(
       <input type="number" class="form-control" name="row" value="%CNFROW%">
     </div>
   </div>
+  <div class="form-group col-sm-9">
+    <div id="mqttloading" class="float-end"></div>
+  </div>
+  <div class="form-group col-sm-1">
+    <div><button type="button" class="btn btn-warning btn-sm bi-search" onclick="initMqtt(this)">&nbsp;Charge Mqtt</button></div>
+  </div>
 </div>
 <div id="conf_page" class="row">chargement...</div>
 <div class="col-md-12 mt-2">
@@ -46,51 +52,35 @@ const char html_page[] PROGMEM = R"rawliteral(
       </div>
     </div>
   </div>
-  %GENITEMS%
+<table class="table table-borderless"><thead>
+<tr><th scope="col" class="col-2">Titre</th><th scope="col" class="col-1">Action</th><th scope="col">Mqtt</th><th scope="col" class="col-1">Domaine</th><th scope="col" class="col-1">Classe</th><th scope="col" class="col-1">Unité</th><th scope="col" class="col-1">Page</th></tr>
+</thead>
+<tbody>%GENITEMS%</tbody>
+</table>
 </div>
 )rawliteral";
 
 const char html_item[] PROGMEM = R"rawliteral(
-<div class="row pt-1">
-  <div class="col-sm-2">
-    <div class="input-group">
-      <span class="input-group-text bi-box-arrow-right"></span>
-      <input type="text" class="form-control" name="pages_label_#P#_#I#" value="%CNFLABEL%">
-    </div>
-  </div>
-  <div class="col-sm-2">
-    <div class="input-group">
-      <label class="input-group-text">Action</label>
-      <select class="form-select" name="pages_action_#P#_#I#" >
+      <td><input type="text" class="form-control" name="pages_label_#P#_#I#" value="%CNFLABEL%"></td>
+      <td>
+        <select class="form-select" name="pages_action_#P#_#I#" >
         <option value="0" %CNFI_A0%>Rien</option>
         <option value="1" %CNFI_A1%>HAtrigger</option>
         <option value="2" %CNFI_A2%>changePage</option>
         <option value="3" %CNFI_A3%>Display</option>
         <option value="4" %CNFI_A4%>Command</option>
-      </select>
-    </div>
-  </div>
-  <div class="col-sm-5">
-    <div class="input-group">
-      <span class="input-group-text">Mqtt</span>
-      <input type="text" class="form-control" name="pages_mqtt_#P#_#I#" value="%CNFMQTT%" %CNFI_MQTTOFF%>
-    </div>
-  </div>
-  <div class="col-sm-2">
-    <div class="input-group">
-      <label class="input-group-text">Type</label>
-      <select class="form-select" name="pages_datatype_#P#_#I#" defval="%CNFTYPE%" %CNFI_TYPEOFF%>
-      </select>
-    </div>
-  </div>
-  <div class="col-sm-1 px-0">
-    <div class="input-group">
-      <span class="input-group-text">Page</span>
-      <select class="form-select" name="pages_page_#P#_#I#" placeholder="%CNFPAGE%" %CNFI_PAGEOFF%>
-      </select>
-    </div>
-  </div>
-</div>
+        </select>
+      </td>
+      <td>
+        <div class="input-group">
+          <button class="btn btn-warning btn-sm" type="button" name="btn_mqtt_#P#_#I#" data-bs-toggle="modal" data-bs-target="#myModal" data-source="#P#_#I#" disabled>...</button>
+          <input type="text" class="form-control" name="pages_mqtt_#P#_#I#" value="%CNFMQTT%" %CNFI_MQTTOFF%></td>
+        </div>
+      </td>
+      <td><input class="form-control" name="pages_source_#P#_#I#" value="%CNFSRC%" %CNFI_SRCOFF%></td>
+      <td><input class="form-control" name="pages_icon_#P#_#I#" value="%CNFICON%" %CNFI_ICONOFF%></td>
+      <td><input class="form-control" name="pages_unit_#P#_#I#"  value="%CNFUNIT%"%CNFI_UNITOFF%></td>
+      <td><select class="form-select" name="pages_page_#P#_#I#" placeholder="%CNFPAGE%" %CNFI_PAGEOFF%></select></td>
 )rawliteral";
 
 const char html_hardware[] PROGMEM = R"rawliteral(
@@ -116,14 +106,16 @@ const char html_hardware[] PROGMEM = R"rawliteral(
     <label class="input-group-text">Type</label>
     <select class="form-select" name="gpio_type_#H#" >
       <option value="0" %CNFH_T0%>noIO</option>
-      <option value="1" %CNFH_T1%>buzzerTouch</option>
-      <option value="2" %CNFH_T2%>binarySensor</option>
-      <option value="3" %CNFH_T3%>numberSensor</option>
-      <option value="4" %CNFH_T4% disabled>stateSensor</option>
-      <option value="5" %CNFH_T5% disabled>tagScanner</option>
-      <option value="6" %CNFH_T6% disabled>switchOutput</option>
-      <option value="7" %CNFH_T7% disabled>lockOutput</option>
-      <option value="8" %CNFH_T8% disabled>lightOutput</option>
+      <option value="1" %CNFH_T1%>buzzer 1 Pulse</option>
+      <option value="2" %CNFH_T2%>buzzer PWM</option>
+      <option value="3" %CNFH_T3% disabled>buzzer I2S</option>
+      <option value="4" %CNFH_T4%>binarySensor</option>
+      <option value="5" %CNFH_T5%>numberSensor</option>
+      <option value="6" %CNFH_T6% disabled>stateSensor</option>
+      <option value="7" %CNFH_T7% disabled>tagScanner</option>
+      <option value="8" %CNFH_T8% disabled>switchOutput</option>
+      <option value="9" %CNFH_T9% disabled>lockOutput</option>
+      <option value="10" %CNFH_T10% disabled>lightOutput</option>
     </select>
   </div>
 </div>

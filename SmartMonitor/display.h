@@ -66,6 +66,7 @@ class Xcontroler {
   public:
     explicit Xcontroler();
     void init();
+    void prepareLoading();
     void drawBackground();
     void drawHeader(char* dateheure);
     void addPage(Xpage* page);
@@ -83,7 +84,7 @@ class Xcontroler {
     void mqttMsgPush(const char* topic, const char* payload);
     void mqttMsgPop();
     void mqttProcess(mqttMsg* msg);
-    void setPinBuzzer(int pin);
+    void setPinBuzzer(int pin, int mode);
   protected:
     Xitem* detectTouch();
     Xpage** _listPages;
@@ -96,7 +97,8 @@ class Xcontroler {
     uint16_t _msgWp;
     uint16_t _msgRp;
     uint16_t _msgCount;
-    int _pinBuzzer;
+    int _buzzerPin;
+    int _buzzerMode;
 };
 
 class Xpage {
@@ -157,7 +159,7 @@ class Xitem {
     void setPage(Xpage* page);
     Xitem* setHAdevice();
     Xitem* setTargetPage(const char* page);
-    virtual Xitem* setMQTTconfig(const char* target, DataType datatype);
+    virtual Xitem* setMQTTconfig(const char* target, const char* source, const char* icon, const char* unit);
     virtual void draw(bool pressed);
     virtual bool isTouch(int32_t x, int32_t y);
     virtual bool doTouch();
@@ -170,7 +172,9 @@ class Xitem {
     char* getStateAttribute();
     char* getCommandTopic();
     char* getTargetPage();
-    DataType getDataType();
+    char* getSource();
+    char* getIcon();
+    char* getUnit();
     BtnAction getAction();
     int32_t x();
     int32_t y();
@@ -195,8 +199,9 @@ class Xitem {
     char* _mqttcommand;
     char* _pageID;
     void* _targetObj;
-    DataType _datatype;
-    String _dataUnit;
+    char* _dataSource;
+    char* _dataIcon;
+    char* _dataUnit;
     LGFX_Sprite* _sprite;
     uint16_t _dispMode;
     char* _iconPath;
