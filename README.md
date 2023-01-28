@@ -1,7 +1,7 @@
 # Home Assistant SmartMonitor
 ![](https://raw.githubusercontent.com/PM04290/Home-Assistant-SmartMonitor/main/res/flashscreen.png)
 
-Version alpha 0.2
+Version alpha 0.3
 
 ## Présentation
 
