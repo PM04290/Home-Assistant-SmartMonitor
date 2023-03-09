@@ -26,7 +26,7 @@
 
 WiFiClient client;
 HADevice device;
-HAMqtt mqtt(client, device, 12); // 12 trigger MAX
+HAMqtt mqtt(client, device, 20); // 20 trigger MAX
 HANumber* brightness;
 
 extern LGFX lcd;
@@ -38,7 +38,6 @@ extern uint8_t displayOrientation;
 extern bool mqttConnected;
 
 uint32_t lastTime = 0;
-bool oldSensor = false;
 char* keypadPageNeeded = NULL;
 bool isConfigLoaded = false;
 
@@ -88,6 +87,8 @@ hw_timer_t * timer = NULL;
 volatile SemaphoreHandle_t timerSemaphore;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 volatile bool isrTopSecond = false;
+volatile uint8_t secondCounter = 0;
+volatile uint8_t secondCounterOld = 0;
 
 void IRAM_ATTR onTimer() {
   // Increment the counter and set the time of ISR
@@ -178,7 +179,7 @@ void setup(void)
   // HA
   device.setUniqueId(mac, sizeof(mac));
   device.setManufacturer("M&L");
-#ifdef defined(SC01)
+#if defined(SC01)
   device.setModel("SmartMonitor (WT32-SC01)");
 #elif defined(SC01Plus)
   device.setModel("SmartMonitor (WT32-SC01 Plus)");
@@ -235,14 +236,20 @@ void loop()
     isrTopSecond = false;
     portEXIT_CRITICAL(&timerMux);
   }
+  bool is5Sec = false;
   if (isNewSec)
   {
-    //DEBUGf("%d %d %d %d\n", ESP.getHeapSize(), ESP.getFreeHeap(), ESP.getMinFreeHeap(), ESP.getMaxAllocHeap());
+    secondCounter = (secondCounter + 1) % 60;
+    if ((secondCounter % 5) == 0 && secondCounter != secondCounterOld)
+    {
+      is5Sec = true;
+    }
+    secondCounterOld = secondCounter;
   }
   if (isConfigLoaded)
   {
     mqtt.loop();
-    SMcontroler.loop();
+    SMcontroler.loop(isNewSec, is5Sec);
     for (int i = 0; i < nbGPIO; i++)
     {
       GPIOs[i].process(isNewSec);

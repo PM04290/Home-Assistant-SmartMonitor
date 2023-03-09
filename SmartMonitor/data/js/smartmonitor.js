@@ -221,7 +221,7 @@ function addMessage(ismqtt, arrtopic, payload) {
 			if (obj.schema === "json") {
 				stateTopic = ";/#|state";
 			} else
-			if (obj.json_attributes_topic !== "") {
+			if (obj.json_attributes_topic !== undefined) {
 				elt.base_topic = obj.json_attributes_topic;
 				let stateAttrib = "state";
 				if (obj.value_template) {
@@ -276,7 +276,7 @@ function onMqttReady() {
 		return 0;
 	});
 	if (mqttstep === 0) {
-		client.connect({onSuccess:onmqttConnect, userName:"toto" , password:"toto" });
+		client.connect({onSuccess:onmqttConnect, userName:$("input[name='MQTTUSER']").val() , password:$("input[name='MQTTPASS']").val() });
 		mqttstep = 1;
 	} else
 	if (mqttstep === 1) {

@@ -6,7 +6,7 @@
 #define DEBUG_SERIAL
 //#define USE_ETHERNET
 
-const int BUZZZER_PIN = 5; // GIOP5 pin connected to piezo buzzer
+const int LUMINOSITY_PIN = 36; // VP : pin connected to photoresistor bridge
 
 #define EEPROM_MAX_SIZE    256
 #define EEPROM_TEXT_SIZE   50
@@ -14,7 +14,7 @@ const int BUZZZER_PIN = 5; // GIOP5 pin connected to piezo buzzer
 
 #define MAX_DIALOG_TEXT_SIZE 1024
 
-#define SM_VERSION "0.3"
+#define SM_VERSION "0.4"
 
 #define JSON_MAX_SIZE 10000
 #define JSON_PAYLOAD_SIZE 3000
@@ -54,13 +54,21 @@ enum HardwareType {
   buzzer1Pulse = 1,
   buzzerPWM = 2,
   SoundI2S = 3,
-  binarySensor = 4,
-  numberSensor = 5,
-  stateSensor = 6,
-  tagScanner = 7,
-  switchOutput = 8,
-  lockOutput = 9,
-  lightOutput = 10,
+  reserved_1 = 4,
+  luminositySensor = 5,
+  reserved_2 = 6,
+  reserved_3 = 7,
+  reserved_4 = 8,
+  reserved_5 = 9,
+  binarySensor = 10,
+  numberSensor = 11,
+  stateSensor = 12,
+  tagScanner = 13,
+  reserved_6 = 14,
+  reserved_7 = 15,
+  switchOutput = 16,
+  lockOutput = 17,
+  lightOutput = 18,
   // keep below last
   lastHardwareType,
 };

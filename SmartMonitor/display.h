@@ -68,9 +68,9 @@ class Xcontroler {
     void init();
     void prepareLoading();
     void drawBackground();
-    void drawHeader(char* dateheure);
+    void drawHeader(const char* dateheure);
     void addPage(Xpage* page);
-    void loop();
+    void loop(bool isNewSecond, bool is5Seconds);
     void setScratchMode();
     void dialog(JsonArray texts);
     int getNbPages();
@@ -85,6 +85,7 @@ class Xcontroler {
     void mqttMsgPop();
     void mqttProcess(mqttMsg* msg);
     void setPinBuzzer(int pin, int mode);
+    void setLuminosityPin(int pin);
   protected:
     Xitem* detectTouch();
     Xpage** _listPages;
@@ -99,6 +100,9 @@ class Xcontroler {
     uint16_t _msgCount;
     int _buzzerPin;
     int _buzzerMode;
+    int _luminosityPin;
+    int _luminosityValue;
+    int _luminosityValueOld;
 };
 
 class Xpage {

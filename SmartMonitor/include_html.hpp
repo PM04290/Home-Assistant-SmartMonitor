@@ -108,14 +108,9 @@ const char html_hardware[] PROGMEM = R"rawliteral(
       <option value="0" %CNFH_T0%>noIO</option>
       <option value="1" %CNFH_T1%>buzzer 1 Pulse</option>
       <option value="2" %CNFH_T2%>buzzer PWM</option>
-      <option value="3" %CNFH_T3% disabled>buzzer I2S</option>
-      <option value="4" %CNFH_T4%>binarySensor</option>
-      <option value="5" %CNFH_T5%>numberSensor</option>
-      <option value="6" %CNFH_T6% disabled>stateSensor</option>
-      <option value="7" %CNFH_T7% disabled>tagScanner</option>
-      <option value="8" %CNFH_T8% disabled>switchOutput</option>
-      <option value="9" %CNFH_T9% disabled>lockOutput</option>
-      <option value="10" %CNFH_T10% disabled>lightOutput</option>
+      <option value="5" %CNFH_T5%>Luminosity Sensor</option>
+      <option value="10" %CNFH_T10%>binary Sensor</option>
+      <option value="11" %CNFH_T11%>number Sensor</option>
     </select>
   </div>
 </div>

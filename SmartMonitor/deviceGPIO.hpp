@@ -28,16 +28,19 @@ struct GPIOdef {
     switch (htype)
     {
       case HardwareType::buzzer1Pulse:
-        SMcontroler.setPinBuzzer(pin,1);
+        SMcontroler.setPinBuzzer(pin, 1);
         //ledcAttachPin(pin, 0);
         pinMode(pin, OUTPUT);
         break;
       case HardwareType::buzzerPWM:
-        SMcontroler.setPinBuzzer(pin,2);
+        SMcontroler.setPinBuzzer(pin, 2);
         ledcAttachPin(pin, 0); // canal 0
         break;
       case HardwareType::SoundI2S:
-        SMcontroler.setPinBuzzer(pin,3);
+        SMcontroler.setPinBuzzer(pin, 3);
+        break;
+      case HardwareType::luminositySensor:
+        SMcontroler.setLuminosityPin(pin);
         break;
       case HardwareType::binarySensor:
         pinMode(pin, INPUT_PULLUP);
@@ -60,7 +63,7 @@ struct GPIOdef {
   {
     _cA = A;
     _cB = B;
-    DEBUGf("coef A %f B %f\n", A,B);
+    DEBUGf("coef A %f B %f\n", A, B);
   }
 
   void process(bool topSecond) {
@@ -92,7 +95,7 @@ struct GPIOdef {
     if (topSecond && (_htype == HardwareType::numberSensor))
     {
       uint32_t sum = 0;
-      for (int i=0; i < 20; i++)
+      for (int i = 0; i < 20; i++)
       {
         sum += analogRead(_pin);
       }

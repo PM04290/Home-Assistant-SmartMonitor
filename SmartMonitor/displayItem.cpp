@@ -38,6 +38,7 @@ Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c
   _dataUnit = "";
   //_datatype = DataType::implicit;
   _iconSize = 48;
+  _dataSource = NULL;
 }
 
 Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color, const char* title)

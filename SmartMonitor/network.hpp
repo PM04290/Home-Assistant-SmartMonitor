@@ -394,8 +394,10 @@ void onConfigRequest(AsyncWebServerRequest * request) {
 }
 
 size_t content_len;
-void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
-  if (!index) {
+void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+  if (!index)
+  {
     DEBUGln("Update start");
     content_len = request->contentLength();
     // if filename includes spiffs, update the spiffs partition
@@ -404,18 +406,22 @@ void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size
       Update.printError(Serial);
     }
   }
-  if (Update.write(data, len) != len) {
+  if (Update.write(data, len) != len)
+  {
     Update.printError(Serial);
   }
 
-  if (final) {
+  if (final)
+  {
     AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
     response->addHeader("Refresh", "20");
     response->addHeader("Location", "/");
     request->send(response);
-    if (!Update.end(true)) {
+    if (!Update.end(true))
+    {
       Update.printError(Serial);
-    } else {
+    } else
+    {
       DEBUGln("Update complete");
       delay(100);
       yield();
@@ -426,7 +432,8 @@ void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size
   }
 }
 
-void handleDoFile(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
+void handleDoFile(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)
+{
   if (!index)
   {
     if (filename.endsWith(".png"))
@@ -443,22 +450,26 @@ void handleDoFile(AsyncWebServerRequest *request, const String& filename, size_t
       request->_tempFile = SPIFFS.open("/" + filename, "w");
     }
   }
-  if (len) {
+  if (len)
+  {
     request->_tempFile.write(data, len);
   }
-  if (final) {
+  if (final)
+  {
     request->_tempFile.close();
     request->redirect("/");
   }
 }
 
-void updateProgress(size_t prg, size_t sz) {
+void updateProgress(size_t prg, size_t sz)
+{
   DEBUGf("Progress: %d%%\n", (prg * 100) / content_len);
   lcd.setCursor(lcd.width() - 63, 0);
   lcd.printf("Upl:%d%%", (prg * 100) / content_len);
 }
 
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
+{
   DEBUGln("handleWebSocketMessage");
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
@@ -493,7 +504,8 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   }
 }
 
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+{
   switch (type) {
     case WS_EVT_CONNECT:
       DEBUGf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
@@ -511,7 +523,8 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
   }
 }
 
-void WiFiEvent(WiFiEvent_t event) {
+void WiFiEvent(WiFiEvent_t event)
+{
   switch (event) {
     case SYSTEM_EVENT_WIFI_READY:
       DEBUGln("WiFi ready");
@@ -568,7 +581,8 @@ void WiFiEvent(WiFiEvent_t event) {
   }
 }
 
-void configWifi() {
+void configWifi()
+{
   char txt[40];
   bool wifiok = false;
 
@@ -593,6 +607,7 @@ void configWifi() {
       delay( 500 ); DEBUG( "." );
       tentativeWiFi++;
     }
+    lcd.println("");
     DEBUGln("");
     wifiok = WiFi.status() == WL_CONNECTED;
   }
@@ -626,13 +641,15 @@ void configWifi() {
   }
 #endif
 
-  if (MDNS.begin(AP_ssid)) {
+  if (MDNS.begin(AP_ssid))
+  {
     MDNS.addService("http", "tcp", 80);
     lcd.printf("web : %s.local\n", AP_ssid);
   }
 }
 
-void configWeb() {
+void configWeb()
+{
   server.serveStatic("/js", SPIFFS, "/js");
   server.serveStatic("/fonts", SPIFFS, "/fonts");
   server.serveStatic("/css", SPIFFS, "/css");

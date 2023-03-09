@@ -30,6 +30,8 @@ Xcontroler::Xcontroler()
   _msgCount = 0;
   _buzzerPin = -1;
   _buzzerMode = -1;
+  _luminosityPin = -1;
+  _luminosityValue = _luminosityValueOld = 0;
 }
 
 void Xcontroler::init()
@@ -83,6 +85,10 @@ void Xcontroler::setPinBuzzer(int pin, int mode)
   _buzzerMode = mode;
 }
 
+void Xcontroler::setLuminosityPin(int pin) {
+  _luminosityPin = pin;
+}
+
 void Xcontroler::drawBackground()
 {
   auto transpalette = 0;
@@ -123,7 +129,7 @@ void Xcontroler::drawBackground()
   lcd.display();
 }
 
-void Xcontroler::drawHeader(char* dateheure)
+void Xcontroler::drawHeader(const char* dateheure)
 {
   //String level = "▏▁▂▃▅▆▇█ ";
   int wifiQuality = max( min(100, 2 * (WiFi.RSSI() + 100)), 0);
@@ -140,7 +146,11 @@ void Xcontroler::drawHeader(char* dateheure)
 #endif
   header.drawString(dateheure, xDate, 0);
   header.setTextDatum(lgfx::top_right);
-  header.drawString(String(wifiQuality) + "%", displayConfig.width, 0);
+  if (WiFi.status() == WL_CONNECTED) {
+    header.drawString(String(wifiQuality) + "%", displayConfig.width, 0);
+  } else {
+    header.drawString("wifi off", displayConfig.width, 0);
+  }
   header.pushSprite(&lcd, 0, 0);
 }
 
@@ -272,7 +282,7 @@ uint8_t* Xcontroler::getIconData()
   return tmpIcon;
 }
 
-void Xcontroler::loop()
+void Xcontroler::loop(bool isNewSecond, bool is5Seconds)
 {
   uint32_t t = millis();
   if (_defaultPage != NULL)
@@ -310,6 +320,29 @@ void Xcontroler::loop()
       }
     }
     item->doTouch();
+  }
+  if (isNewSecond)
+  {
+    // every second
+  }
+  if (is5Seconds)
+  {
+    // every 5 seconds
+    if (_luminosityPin > 0)
+    {
+      // prefer VP pin (GPIO36) for photoresistor sensor
+      _luminosityValue = analogRead(_luminosityPin);
+      // Do luminosity changing
+      // calibrate for GL5516 with 1K resistor
+      //DEBUGln(_luminosityValue);
+      if (abs(_luminosityValue - _luminosityValueOld) > 200)
+      {
+        int bval = map(_luminosityValue, 0, 4095, 50, 255);
+        lcd.setBrightness(bval);
+        //
+        _luminosityValueOld = _luminosityValue;
+      }
+    }
   }
   mqttMsgPop();
 }
