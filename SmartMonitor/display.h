@@ -36,7 +36,7 @@ static const lgfx::U8g2font font_XXL( myRoboto48r_tf );
 #define COLOR_WHITE  lcd.color888(255, 255, 255)
 #define COLOR_ORANGE lcd.color888(253, 126, 20)
 #define COLOR_GREEN  lcd.color888(0, 133, 41)
-#define COLOR_GRAY   lcd.color888(90, 90, 90)
+#define COLOR_GRAY   lcd.color888(120, 120, 120)
 #define COLOR_RED    lcd.color888(250, 0, 0)
 #define COLOR_CYAN   lcd.color888(0, 200, 200)
 
@@ -70,6 +70,8 @@ class Xcontroler {
     void drawBackground();
     void drawHeader(const char* dateheure);
     void addPage(Xpage* page);
+    void deletePages();
+    void playBuzzer();
     void loop(bool isNewSecond, bool is5Seconds);
     void setScratchMode();
     void dialog(JsonArray texts);
@@ -108,8 +110,10 @@ class Xcontroler {
 class Xpage {
   public:
     Xpage(const char* id, const char* title, PageType ptype);
+    ~Xpage();
     virtual void draw();
     Xitem* addItem(Xitem* item);
+    void deleteItems();
     int nbItems();
     Xitem* getItem(int index);
     Xitem* getItemByIndex(uint8_t index);
@@ -137,6 +141,7 @@ class XpageKeypad : public Xpage
 {
   public:
     XpageKeypad(const char* id, const char* title, PageType ptype, const char* target);
+    ~XpageKeypad();
     void clearCode();
     void appendCode(char newkey);
     void doOnEnter(ACParmType armtype);
@@ -159,6 +164,7 @@ class Xitem {
   public:
     Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color, const char* title, LGFX_Sprite *sprite);
     Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color, const char* title);
+    ~Xitem();
     uint8_t getIndex();
     void setPage(Xpage* page);
     Xitem* setHAdevice();

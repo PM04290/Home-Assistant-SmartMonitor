@@ -113,7 +113,7 @@ class LGFX : public lgfx::LGFX_Device
 //*****************************************************
 #ifdef SC01Plus
 // describe the pin list available for external using
-static uint8_t pinAvailable[] = {5, 22, 23};
+static uint8_t pinAvailable[] = {10, 11, 12, 13, 14, 21};
 
 #define CORNER_RADIUS 10
 class LGFX : public lgfx::LGFX_Device

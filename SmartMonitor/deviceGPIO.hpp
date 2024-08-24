@@ -5,6 +5,9 @@
 #define MAX_GPIO 3
 int nbGPIO = 0;
 
+#define LEDC_BASE_FREQ     5000
+#define LEDC_TIMER_12_BIT  12
+
 extern Xcontroler SMcontroler;
 
 struct GPIOdef {
@@ -29,12 +32,15 @@ struct GPIOdef {
     {
       case HardwareType::buzzer1Pulse:
         SMcontroler.setPinBuzzer(pin, 1);
-        //ledcAttachPin(pin, 0);
         pinMode(pin, OUTPUT);
         break;
       case HardwareType::buzzerPWM:
         SMcontroler.setPinBuzzer(pin, 2);
+#if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3) )
+        ledcAttach(pin, LEDC_BASE_FREQ, LEDC_TIMER_12_BIT);
+#else
         ledcAttachPin(pin, 0); // canal 0
+#endif
         break;
       case HardwareType::SoundI2S:
         SMcontroler.setPinBuzzer(pin, 3);

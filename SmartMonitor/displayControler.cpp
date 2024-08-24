@@ -92,7 +92,6 @@ void Xcontroler::setLuminosityPin(int pin) {
 void Xcontroler::drawBackground()
 {
   auto transpalette = 0;
-  //header.setColorDepth(lgfx::palette_4bit);
   header.createSprite(displayConfig.width, displayConfig.headerheight);
   header.fillScreen(transpalette);
   if (header.fontHeight(&font_XS) < displayConfig.headerheight)
@@ -103,15 +102,13 @@ void Xcontroler::drawBackground()
     header.setFont(&font_XXS);
   }
 
-  //zone.setColorDepth(lgfx::palette_4bit);
-  DEBUGf("zone W:%d H:%d\n", displayConfig.zonewidth, displayConfig.zoneheight);
+  //DEBUGf("zone W:%d H:%d\n", displayConfig.zonewidth, displayConfig.zoneheight);
   zone.createSprite(displayConfig.zonewidth, displayConfig.zoneheight);
   zone.fillScreen(transpalette);
   zone.setFont(&font_L);
   zone.setTextColor(COLOR_ORANGE);
   zone.setTextDatum(lgfx::middle_center);
 
-  //kpad.setColorDepth(lgfx::palette_4bit);
   kpad.createSprite(displayConfig.kpadsize, displayConfig.kpadsize);
   kpad.fillScreen(transpalette);
   kpad.setFont(&font_M);
@@ -140,9 +137,12 @@ void Xcontroler::drawHeader(const char* dateheure)
   header.setTextDatum(lgfx::top_left);
   int xDate = 0;
 #ifndef SMALL_SCREEN
-  header.drawString("SmartMonitor", 0, 0);
-  header.setTextDatum(lgfx::top_center);
-  xDate = displayConfig.width / 2;
+  if (displayOrientation & 1) // Horizontal
+  {
+    header.drawString("SmartMonitor", 0, 0);
+    header.setTextDatum(lgfx::top_center);
+    xDate = displayConfig.width / 2;
+  }
 #endif
   header.drawString(dateheure, xDate, 0);
   header.setTextDatum(lgfx::top_right);
@@ -159,11 +159,23 @@ Xitem* Xcontroler::detectTouch()
   Xitem* item = NULL;
   static Xitem* firstPressedItem = NULL;
   static Xitem* lastPressedItem = NULL;
-  static bool headerTapActived = false;
+  static uint32_t headerTouchTimeout = 0;
+  static uint8_t headerTouchCount = 0;
+  static bool headerTouched = false;
 
-  static int32_t x, y;
-  if (lcd.getTouch(&x, &y))
+  static int32_t x, y, c;
+  c = lcd.getTouch(&x, &y);
+  if (c > 0)
   {
+    if (y < displayConfig.headerheight)
+    {
+      // detect multiple touch on Header, to reset
+      headerTouchTimeout = (millis() + 3000) | 1;
+      headerTouched = true;
+      return NULL;
+    }
+    headerTouchTimeout = 0;
+    headerTouchCount = 0;
     for (byte p = 0; p < _nbPages && item == NULL; p++)
     {
       for (byte i = 0; i < _listPages[p]->nbItems() && item == NULL; i++)
@@ -174,26 +186,50 @@ Xitem* Xcontroler::detectTouch()
         }
       }
     }
-    if (firstPressedItem == NULL && item) {
+    if (firstPressedItem == NULL && item)
+    {
       item->draw(true);
       firstPressedItem = lastPressedItem = item;
     }
-    if (item != lastPressedItem) {
-      if (lastPressedItem) {
+    if (item != lastPressedItem)
+    {
+      if (lastPressedItem)
+      {
         lastPressedItem->draw(false);
       }
-      if (item && (item == firstPressedItem)) {
+      if (item && (item == firstPressedItem))
+      {
         item->draw(true);
       }
       lastPressedItem = item;
     }
     return NULL; // tant qu'on est appuyé on renvoi NULL
   } else {
-    if (lastPressedItem) {
+    if (lastPressedItem)
+    {
       lastPressedItem->draw(false);
     }
     item = (firstPressedItem == lastPressedItem) ? lastPressedItem : NULL;
     lastPressedItem = firstPressedItem = NULL;
+
+    // gestion du multitouch header
+    if (headerTouchTimeout > 0)
+    {
+      if (headerTouched)
+      {
+        headerTouchCount++;
+        if (headerTouchCount >= 4)
+        {
+          ESP.restart();
+        }
+      }
+      headerTouched = false;
+      if (millis() > headerTouchTimeout)
+      {
+        headerTouchCount = 0;
+        headerTouchTimeout = 0;
+      }
+    }
     return item;
   }
   return NULL;
@@ -207,7 +243,8 @@ void Xcontroler::addPage(Xpage* page)
 
   _listPages[_nbPages] = page;
   _nbPages++;
-  if (_defaultPage == NULL) {
+  if (_defaultPage == NULL)
+  {
     _defaultPage = page;
     page->show();
   }
@@ -215,6 +252,19 @@ void Xcontroler::addPage(Xpage* page)
   {
     _dlgPage = (XpageDialog*)page;
   }
+}
+
+void Xcontroler::deletePages()
+{
+  for (int p = 0; p < _nbPages; p++)
+  {
+    delete(_listPages[p]);
+  }
+  free(_listPages);
+  _listPages = NULL;
+  _nbPages = 0;
+  _defaultPage = NULL;
+  _dlgPage = NULL;
 }
 
 int Xcontroler::getNbPages()
@@ -234,7 +284,8 @@ Xpage* Xcontroler::getPage(int index)
 bool Xcontroler::resetTempoPage(Xpage* page)
 {
   // TODO : vérif
-  if (page != _listPages[0] && page != _defaultPage) {
+  if (page != _listPages[0] && page != _defaultPage)
+  {
     _oldTimeDefaultPage = millis();
     return true;
   }
@@ -282,6 +333,34 @@ uint8_t* Xcontroler::getIconData()
   return tmpIcon;
 }
 
+void Xcontroler::playBuzzer()
+{
+  if (_buzzerPin > 0)
+  {
+    if (_buzzerMode == 1) { // 1 pulse
+      digitalWrite(_buzzerPin, HIGH);
+      delay(50);
+      digitalWrite(_buzzerPin, LOW);
+    }
+    if (_buzzerMode == 2) { // PWM
+#if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3) )
+TODO : test frequency
+      ledcWrite(_buzzerPin, 2048); // 50%
+      delay(60);
+      ledcWrite(_buzzerPin, 0);
+#else
+      ledcSetup(0, 1200, 12); // canal 0, 1200 Hz, 12bit
+      ledcWrite(0, 2048); // 50%
+      delay(60);
+      ledcWrite(0, 0);
+#endif
+    }
+    if (_buzzerMode == 3) { // I2S
+      // soon
+    }
+  }
+}
+
 void Xcontroler::loop(bool isNewSecond, bool is5Seconds)
 {
   uint32_t t = millis();
@@ -301,24 +380,9 @@ void Xcontroler::loop(bool isNewSecond, bool is5Seconds)
     }
   }
   Xitem* item = detectTouch();
-  if (item != NULL) {
-    if (_buzzerPin > 0)
-    {
-      if (_buzzerMode == 1) { // 1 pulse
-        digitalWrite(_buzzerPin, HIGH);
-        delay(60);
-        digitalWrite(_buzzerPin, LOW);
-      }
-      if (_buzzerMode == 2) { // PWM
-        ledcSetup(0, 1200, 12); // canal 0, 1200 Hz, 12bit
-        ledcWrite(0, 2048); // 50%
-        delay(60);
-        ledcWrite(0, 0);
-      }
-      if (_buzzerMode == 3) { // I2S
-        // soon
-      }
-    }
+  if (item != NULL)
+  {
+    playBuzzer();
     item->doTouch();
   }
   if (isNewSecond)
@@ -384,7 +448,7 @@ void Xcontroler::dialog(JsonArray texts)
 
 size_t Xcontroler::readFile(const char * path)
 {
-  DEBUGf("Reading file: %s\n", path);
+  //DEBUGf("Reading file: %s\n", path);
   size_t result = 0;
   File file = SPIFFS.open(path);
   if (!file || file.isDirectory())

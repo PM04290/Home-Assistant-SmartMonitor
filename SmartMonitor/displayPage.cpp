@@ -25,6 +25,12 @@ Xpage::Xpage(const char* id, const char* title, PageType ptype)
   strcpy(_title, title);
 }
 
+Xpage::~Xpage()
+{
+  if (_id) free(_id);
+  if (_title) free(_title);
+}
+
 void Xpage::draw()
 {
   if (_visible)
@@ -35,7 +41,7 @@ void Xpage::draw()
     sp.fillRect(0, 0, _w, _h, COLOR_BLACK);
     sp.pushSprite(_x, _y);
     sp.deleteSprite();
-    DEBUGf("Page %s draw items %d %d %d %d\n", _id, _x, _y, _w, _h);
+    //DEBUGf("Page %s draw items %d %d %d %d\n", _id, _x, _y, _w, _h);
     for (byte i = 0; i < _nbItems; i++)
     {
       _items[i]->draw(false);
@@ -53,6 +59,17 @@ Xitem* Xpage::addItem(Xitem* item)
   item->setPage(this);
   _nbItems++;
   return item;
+}
+
+void Xpage::deleteItems()
+{
+  for (byte i = 0; i < _nbItems; i++)
+  {
+    delete(_items[i]);
+  }
+  free(_items);
+  _items = NULL;
+  _nbItems = 0;
 }
 
 int Xpage::nbItems()
@@ -114,6 +131,11 @@ XpageKeypad::XpageKeypad(const char* id, const char* title, PageType ptype, cons
   _mqttTopic = (char*)malloc(strlen(target) + 1);
   strcpy(_mqttTopic, target);
   _trigger = new HADeviceTrigger(HADeviceTrigger::ButtonShortPressType, "AlarmKeypad");
+}
+
+XpageKeypad::~XpageKeypad()
+{
+  if (_mqttTopic) free(_mqttTopic);
 }
 
 void XpageKeypad::clearCode()

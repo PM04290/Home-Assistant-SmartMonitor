@@ -6,15 +6,13 @@
 #define DEBUG_SERIAL
 //#define USE_ETHERNET
 
-const int LUMINOSITY_PIN = 36; // VP : pin connected to photoresistor bridge
-
 #define EEPROM_MAX_SIZE    256
-#define EEPROM_TEXT_SIZE   50
-#define EEPROM_TEXT_OFFSET 6
+#define EEPROM_TEXT_SIZE   48
+#define EEPROM_TEXT_OFFSET 16
 
-#define MAX_DIALOG_TEXT_SIZE 1024
+//#define MAX_DIALOG_TEXT_SIZE 1024
 
-#define SM_VERSION "0.4"
+#define SM_VERSION "0.11"
 
 #define JSON_MAX_SIZE 10000
 #define JSON_PAYLOAD_SIZE 3000

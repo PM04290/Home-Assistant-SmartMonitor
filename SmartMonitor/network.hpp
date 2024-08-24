@@ -5,9 +5,11 @@
 #include <ESPmDNS.h>
 #include <EEPROM.h>
 #include <Update.h>
+
 #ifdef USE_ETHERNET
 #include <ETH.h>
 #endif
+
 #include "display.h"
 
 #include "include_html.hpp"
@@ -17,6 +19,7 @@ extern LGFX lcd;
 extern Xcontroler SMcontroler;
 extern displayConfig_t displayConfig;
 extern uint8_t displayOrientation;
+extern bool needConfigLoading;
 
 char Wifi_ssid[EEPROM_TEXT_SIZE] = "";  // WiFi SSID
 char Wifi_pass[EEPROM_TEXT_SIZE] = "";  // WiFi password
@@ -34,6 +37,8 @@ static bool eth_connected = false;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
+
+bool wifiok = false;
 
 StaticJsonDocument<JSON_MAX_SIZE> docJson;
 
@@ -106,7 +111,8 @@ String getHTMLforItems(int numpage, Xpage* page, int numitem)
     {
       blocI.replace("%CNFLABEL%", item->getTitle());
       String res;
-      for (int n = 0; n < (int)BtnAction::lastBtnAction; n++) {
+      for (int n = 0; n < (int)BtnAction::lastBtnAction; n++)
+      {
         String kcnf = "%CNFI_A" + String(n) + "%";
         blocI.replace(kcnf, (int)item->getAction() == n ? "selected" : "");
       }
@@ -149,7 +155,8 @@ String getHTMLforItems(int numpage, Xpage* page, int numitem)
   if (!lineok)
   {
     blocI.replace("%CNFLABEL%", "");
-    for (int n = 0; n < (int)BtnAction::lastBtnAction; n++) {
+    for (int n = 0; n < (int)BtnAction::lastBtnAction; n++)
+    {
       String kcnf = "%CNFI_A" + String(n) + "%";
       blocI.replace(kcnf, (int)BtnAction::None == n ? "selected" : "");
     }
@@ -234,8 +241,10 @@ void onIndexRequest(AsyncWebServerRequest *request) {
     String html;
     while (f.available()) {
       html = f.readStringUntil('\n') + '\n';
-      if (html.indexOf('%') > 0) {
-        if (html.indexOf("%GENHTMLPAGE%") > 0) {
+      if (html.indexOf('%') > 0)
+      {
+        if (html.indexOf("%GENHTMLPAGE%") > 0)
+        {
           //
           String blocI = html_header;
           blocI.replace("%CNFCOL%", String(displayConfig.nbcols));
@@ -268,8 +277,12 @@ void onIndexRequest(AsyncWebServerRequest *request) {
           html.replace("<!--%GENHTMLGPIO%-->", blocGPIO);
         } else
         {
+          html.replace("%CNFCOL%", String(displayConfig.nbcols));
+          html.replace("%CNFROW%", String(displayConfig.nbrows));
           html.replace("%CNFOR0%", displayOrientation == 0 ? "checked" : "");
-          html.replace("%CNFOR1%", displayOrientation > 0 ? "checked" : "");
+          html.replace("%CNFOR1%", displayOrientation == 1 ? "checked" : "");
+          html.replace("%CNFOR2%", displayOrientation == 2 ? "checked" : "");
+          html.replace("%CNFOR3%", displayOrientation == 3 ? "checked" : "");
           html.replace("%CNFCODE%", String(AP_ssid[8]));
           html.replace("%CNFMAC%", WiFi.macAddress());
           html.replace("%CNFSSID%", Wifi_ssid);
@@ -277,6 +290,7 @@ void onIndexRequest(AsyncWebServerRequest *request) {
           html.replace("%CNFMQTTSRV%", mqtt_host);
           html.replace("%CNFMQTTUSER%", mqtt_user);
           html.replace("%CNFMQTTPASS%", mqtt_pass);
+          html.replace("%VERSION%", SM_VERSION);
           //
         }
       }
@@ -287,8 +301,10 @@ void onIndexRequest(AsyncWebServerRequest *request) {
   request->send(response);
 }
 
-void onConfigRequest(AsyncWebServerRequest * request) {
-  if (request->hasParam("cnf", true)) {
+void onConfigRequest(AsyncWebServerRequest * request)
+{
+  if (request->hasParam("cnf", true))
+  {
     String cnf = request->getParam("cnf", true)->value();
     //    DEBUGln(cnf);
     if (cnf == "conf")
@@ -296,9 +312,11 @@ void onConfigRequest(AsyncWebServerRequest * request) {
       DynamicJsonDocument docJSon(JSON_MAX_SIZE);
       JsonObject Jconfig = docJSon.to<JsonObject>();
       int params = request->params();
-      for (int i = 0; i < params; i++) {
+      for (int i = 0; i < params; i++)
+      {
         AsyncWebParameter* p = request->getParam(i);
-        if (p->isPost() && p->name() != "cnf") {
+        if (p->isPost() && p->name() != "cnf")
+        {
           //DEBUGf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
           String str = p->name();
           if (str == "col") {
@@ -317,7 +335,8 @@ void onConfigRequest(AsyncWebServerRequest * request) {
             String sval(p->value().c_str());
 
             //DEBUGf("[%s][%s][%s](%s) = %s\n", keybloc, kline, key, kitem, sval);
-            if (kitem == "") {
+            if (kitem == "")
+            {
               if (isValidNumber(sval))
               {
                 Jconfig[keybloc][kline.toInt()][key] = sval.toInt();
@@ -328,7 +347,8 @@ void onConfigRequest(AsyncWebServerRequest * request) {
             } else
             {
               // on laisse le Titre vide pour supprimer une ligne
-              if (request->getParam("pages_label_" + kline + "_" + kitem, true)->value() != "") {
+              if (request->getParam("pages_label_" + kline + "_" + kitem, true)->value() != "")
+              {
                 if (isValidNumber(sval))
                 {
                   Jconfig[keybloc][kline.toInt()]["items"][kitem.toInt()][key] = sval.toInt();
@@ -342,8 +362,10 @@ void onConfigRequest(AsyncWebServerRequest * request) {
         }
       }
       // nettoyage des pages vides
-      for (JsonArray::iterator it = Jconfig["pages"].as<JsonArray>().begin(); it != Jconfig["pages"].as<JsonArray>().end(); ++it) {
-        if (!(*it).containsKey("items")) {
+      for (JsonArray::iterator it = Jconfig["pages"].as<JsonArray>().begin(); it != Jconfig["pages"].as<JsonArray>().end(); ++it)
+      {
+        if (!(*it).containsKey("items"))
+        {
           Jconfig["pages"].as<JsonArray>().remove(it);
         }
       }
@@ -354,16 +376,20 @@ void onConfigRequest(AsyncWebServerRequest * request) {
       //DEBUGln(Jres);
 
       File file = SPIFFS.open("/config.json", "w");
-      if (file) {
+      if (file)
+      {
         file.write((byte*)Jres.c_str(), Lres);
         file.close();
         DEBUGln("Fichier de config enregistré");
+        //
+        needConfigLoading = true;
       } else {
         DEBUGln("Erreur sauvegarde config");
       }
     }
-    if (cnf == "wifi") {
-      displayOrientation = request->getParam("ORIENTATION", true)->value().toInt();
+    if (cnf == "wifi")
+    {
+      displayOrientation = request->getParam("ORIENTATION", true)->value().toInt() % 4;
       AP_ssid[8] = request->getParam("CODE", true)->value().c_str()[0];
       LumDevID[17] = AP_ssid[8];
       strcpy(Wifi_ssid, request->getParam("SSID", true)->value().c_str() );
@@ -402,7 +428,8 @@ void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size
     content_len = request->contentLength();
     // if filename includes spiffs, update the spiffs partition
     int cmd = (filename.indexOf("spiffs") > -1) ? U_SPIFFS : U_FLASH;
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd))
+    {
       Update.printError(Serial);
     }
   }
@@ -464,8 +491,8 @@ void handleDoFile(AsyncWebServerRequest *request, const String& filename, size_t
 void updateProgress(size_t prg, size_t sz)
 {
   DEBUGf("Progress: %d%%\n", (prg * 100) / content_len);
-  lcd.setCursor(lcd.width() - 63, 0);
-  lcd.printf("Upl:%d%%", (prg * 100) / content_len);
+  lcd.setCursor(lcd.width() - 85, 0);
+  lcd.printf("Upl:%02d%%", (prg * 100) / content_len);
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
@@ -526,34 +553,37 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 void WiFiEvent(WiFiEvent_t event)
 {
   switch (event) {
-    case SYSTEM_EVENT_WIFI_READY:
+    case ARDUINO_EVENT_WIFI_READY:
       DEBUGln("WiFi ready");
       break;
-    case SYSTEM_EVENT_STA_START:
-      DEBUG("WiFi search AP");
+    case ARDUINO_EVENT_WIFI_STA_START:
+      DEBUGln("WiFi search");
       break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-      DEBUGln("\nWiFi AP connected");
+    case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+      DEBUGln("WiFi STA connected");
       break;
-    case SYSTEM_EVENT_STA_GOT_IP:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
       DEBUGln("WiFi connected");
       DEBUG("IP address: ");
       DEBUGln(WiFi.localIP());
+      wifiok = true;
       break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
       DEBUGln("WiFi lost connection");
+      wifiok = false;
+      WiFi.disconnect();
       break;
       // For Ethernet
 #ifdef USE_ETHERNET
-    case SYSTEM_EVENT_ETH_START:
+    case ARDUINO_EVENT_ETH_START:
       DEBUGln("ETH Started");
       //set eth hostname here
       ETH.setHostname(AP_ssid);
       break;
-    case SYSTEM_EVENT_ETH_CONNECTED:
+    case ARDUINO_EVENT_ETH_CONNECTED:
       DEBUGln("ETH Connected");
       break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
+    case ARDUINO_EVENT_ETH_GOT_IP:
       DEBUG("ETH MAC: ");
       DEBUG(ETH.macAddress());
       DEBUG(", IPv4: ");
@@ -566,11 +596,11 @@ void WiFiEvent(WiFiEvent_t event)
       DEBUGln("Mbps");
       eth_connected = true;
       break;
-    case SYSTEM_EVENT_ETH_DISCONNECTED:
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
       DEBUGln("ETH Disconnected");
       eth_connected = false;
       break;
-    case SYSTEM_EVENT_ETH_STOP:
+    case ARDUINO_EVENT_ETH_STOP:
       DEBUGln("ETH Stopped");
       eth_connected = false;
       break;
@@ -581,10 +611,35 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
+bool WiFi_STA_TryConnect(bool lcdtrace)
+{
+  if (strlen(Wifi_ssid))
+  {
+    if (lcdtrace)
+    {
+      lcd.print("wifi ");
+      lcd.print(Wifi_ssid);
+    }
+    int tentativeWiFi = 0;
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(Wifi_ssid, Wifi_pass);
+    while (WiFi.status() != WL_CONNECTED && tentativeWiFi < 20)
+    {
+      if (lcdtrace) lcd.print(".");
+      delay(500);
+      DEBUG( "." );
+      tentativeWiFi++;
+    }
+    if (lcdtrace) lcd.println("");
+    DEBUGln("");
+    return (WiFi.status() == WL_CONNECTED);
+  }
+  return false;
+}
+
 void configWifi()
 {
   char txt[40];
-  bool wifiok = false;
 
   WiFi.onEvent(WiFiEvent);
   DEBUGln(WiFi.macAddress());
@@ -593,44 +648,23 @@ void configWifi()
 
 #ifdef USE_ETHERNET
   ETH.begin();
+  wifiok = true;
 #else
   // Mode normal
-  if (strlen(Wifi_ssid)) {
-    DEBUG( "Wifi search" );
-    lcd.print("wifi ");
-    lcd.print(Wifi_ssid);
-    int tentativeWiFi = 0;
-    WiFi.begin(Wifi_ssid, Wifi_pass);
-    // Attente de la connexion au réseau WiFi / Wait for connection
-    while ( WiFi.status() != WL_CONNECTED && tentativeWiFi < 20) {
-      lcd.print(".");
-      delay( 500 ); DEBUG( "." );
-      tentativeWiFi++;
-    }
-    lcd.println("");
-    DEBUGln("");
-    wifiok = WiFi.status() == WL_CONNECTED;
-  }
-  if (wifiok) {
-    // Connexion WiFi établie / WiFi connexion is OK
-    DEBUGf("Connected to %s\n", Wifi_ssid );
-    DEBUGf("IP address: %s\n", WiFi.localIP().toString().c_str() );
-
+  bool wifires = WiFi_STA_TryConnect(true);
+  if (wifiok)
+  {
     lcd.println("");
     lcd.println("Wifi OK");
     lcd.println(WiFi.localIP().toString().c_str());
   } else {
-    DEBUGln(F(" No wifi, set AP mode."));
-  }
-
-  if (wifiok == false) {
+    DEBUGln("No wifi STA, set AP mode.");
     // Mode AP
     WiFi.mode(WIFI_AP);
     WiFi.softAP(AP_ssid, AP_pass);
     // Default IP Address is 192.168.4.1
     // if you want to change uncomment below
     // softAPConfig (local_ip, gateway, subnet)
-
     DEBUGln();
     DEBUGf("AP WIFI :%s\n", AP_ssid );
     DEBUGf("AP IP Address: %s\n", WiFi.softAPIP().toString().c_str());
@@ -640,7 +674,6 @@ void configWifi()
     lcd.print(WiFi.softAPIP().toString().c_str());
   }
 #endif
-
   if (MDNS.begin(AP_ssid))
   {
     MDNS.addService("http", "tcp", 80);

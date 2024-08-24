@@ -6,7 +6,6 @@ var jsonmqtt = JSON.parse("[]");
 var timerMqtt = null;
 var mqttstep = 0;
 var sourcemqttrequest = null;
-var sourcemodal = null;
 
 function onLoad(event) {
 	initWebSocket();
@@ -36,18 +35,6 @@ function onLoad(event) {
 			window.setTimeout(function() {$("#resultwifi").fadeTo(500, 0)}, 2000);
 			//console.log(data);
 		});
-	});
-	$('#myModal').on('show.bs.modal', function (event) {
-		var button = $(event.relatedTarget) // Button that triggered the modal
-		sourcemodal = button.data('source') // Extract info from data-* attributes
-		console.log(sourcemodal);
-	})
-	$('#saveModal').click(function() {
-		$("input[name='pages_mqtt_"+sourcemodal+"']").val($("#cnf-base").val()+$("#cnf-state").val()+$("#cnf-command").val()).trigger('input');
-		$("input[name='pages_source_"+sourcemodal+"']").val($("#cnf-source").val());
-		$("input[name='pages_icon_"+sourcemodal+"']").val($("#cnf-class").val());
-		$("input[name='pages_unit_"+sourcemodal+"']").val($("#cnf-unit").val());
-		$('#myModal').modal('hide');
 	});
 }
 
@@ -163,7 +150,7 @@ function addpage(elt) {
 function initMqtt(elt) {
 	sourcemqttrequest = elt;
 	$(elt).prop("disabled",true);
-	$("#mqttloading").html("Recherche en cours...");
+	$("#mqttloading").html("Loading...");
 	jsonmqtt = JSON.parse("[]");
 	client = new Paho.MQTT.Client($("input[name='MQTTSRV']").val(), 1884, "smarmon"+$("input[name='CODE']").val()+"_web");
 	client.onConnectionLost = onmqttConnectionLost;
@@ -172,7 +159,7 @@ function initMqtt(elt) {
 }
 
 function onmqttConnect() {
-  console.log("Mqtt onConnect");
+  //console.log("Mqtt onConnect");
   if (mqttstep === 0) {
 	  client.subscribe("smartmonitor/binary_sensor/+/state");
 	  client.subscribe("smartmonitor/binary_sensor/+/device_class");
@@ -210,8 +197,8 @@ function addMessage(ismqtt, arrtopic, payload) {
 		let component = obj.name.replaceAll(" ","_").toLowerCase();
 		let elt = jsonmqtt.find(item => item.elt === component);
 		if (!elt) {
-			console.log('mqtt element creation:'+component);
-			console.log(obj);
+			//console.log('mqtt element creation:'+component);
+			//console.log(obj);
 			elt =  {elt: component, type:elementType, attributes: JSON.parse("{}")};
 			jsonmqtt.push(elt);
 		}
@@ -293,12 +280,20 @@ function onMqttReady() {
 			target.append($('<option>', {value:entry[0], text:entry[1].elt}));
 		}
 		$(sourcemqttrequest).prop("disabled",false);
-		console.log(jsonmqtt);
-		$("#mqttloading").html("Mqtt chargé");
+		//console.log(jsonmqtt);
+		$("#mqttloading").html("Mqtt helper ready");
 		window.setTimeout(function() {$("#mqttloading").html("")}, 2000);
-		$("button[name^='btn_mqtt']").removeAttr('disabled');
+		//$("a[id^='btn_mqtt']");
+		$("a[id^='btn_mqtt']").removeAttr('disabled').fadeOut(150).fadeIn(150).fadeOut(150).fadeIn(150).fadeOut(150).fadeIn(150);
 	}
 }
+
+const editHA = (event, p, i) => {
+	$("#modal_p").val(p).change();
+	$("#modal_i").val(i).change();
+	// TODO: load fields
+	toggleModal(event);
+};
 
 function onConfigDeviceChange(whosend) {
 	let elt = $(whosend).children("option").filter(":selected").text();
@@ -339,8 +334,11 @@ function onConfigEntityChange(whosend) {
 		$("#cnf-class").val(devobj.attributes.device_class);
 		$("#cnf-state").val(devobj.state_topic);
 	} else {
+		if (devobj.type === "weather") {
+			$("#cnf-source").val("sensor");
+		}
 		$("#cnf-class").val(attrib);
-		$("#cnf-state").val(attrib);
+		$("#cnf-state").val("/"+attrib);
 	}
 	if (devobj.attributes.hasOwnProperty(attrib+'_unit')) {
 		$("#cnf-unit").val(devobj.attributes[attrib+'_unit']);
@@ -369,3 +367,16 @@ function onConfigEntityChange(whosend) {
 	}).fail(function( jqXHR, textStatus ) {
 	});			
 }
+
+const confirmModal = (event) => {
+	event.preventDefault();
+	let p = $("#modal_p").val();
+	let i = $("#modal_i").val();
+	let sourcemodal = p+"_"+i;
+	$("input[name='pages_mqtt_"+sourcemodal+"']").val($("#cnf-base").val()+$("#cnf-state").val()+$("#cnf-command").val()).trigger('input');
+	$("input[name='pages_source_"+sourcemodal+"']").val($("#cnf-source").val());
+	$("input[name='pages_icon_"+sourcemodal+"']").val($("#cnf-class").val());
+	$("input[name='pages_unit_"+sourcemodal+"']").val($("#cnf-unit").val());
+	const modal = document.getElementById(event.currentTarget.getAttribute("data-target"));
+	closeModal(modal);
+};

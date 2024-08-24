@@ -1,15 +1,12 @@
 /*
-  New esp32 library for ESP32S3 : https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-  Old : https://dl.espressif.com/dl/package_esp32_index.json
-
-  Designed for : ESP32+TFT(custom), WT32-SC01, and future "SC01 Plus" when core 2.0 optimized and others library ready for.
-  Core ESP32 : 1.0.6
+  Designed for : ESP32+TFT(custom), WT32-SC01, and WT32-SC01 Plus.
+  Core ESP32 : >= 2.0.11
   depending library:
     - LovyanGFX             (from Arduino IDE)
     - ArduinoJson           (from Arduino IDE)
-    - HAintegration         (fork of home-assistant-integration)
     - ESPAsyncTCP           (from Arduino IDE)
     - ESPAsyncWebServer     (from Arduino IDE)
+    - HAintegration         (fork of home-assistant-integration)
 
   test for PNG metatags : https://www.metadata2go.com/
 
@@ -40,6 +37,7 @@ extern bool mqttConnected;
 uint32_t lastTime = 0;
 char* keypadPageNeeded = NULL;
 bool isConfigLoaded = false;
+bool needConfigLoading = false;
 
 void listDir(const char * dirname)
 {
@@ -89,6 +87,8 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 volatile bool isrTopSecond = false;
 volatile uint8_t secondCounter = 0;
 volatile uint8_t secondCounterOld = 0;
+volatile uint8_t minuteCounter = 0;
+volatile uint8_t minuteCounterOld = 0;
 
 void IRAM_ATTR onTimer() {
   // Increment the counter and set the time of ISR
@@ -104,6 +104,11 @@ void setupTimer()
 {
   // Create semaphore to inform us when the timer has fired
   timerSemaphore = xSemaphoreCreateBinary();
+#if ( defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3) )
+  timer = timerBegin(1000000);
+  timerAttachInterrupt(timer, &onTimer);
+  timerAlarm(timer, 1000000, true, 0);
+#else
   // Use 1st timer of 4 (counted from zero).
   // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more info).
   timer = timerBegin(0, 80, true);
@@ -114,6 +119,7 @@ void setupTimer()
   timerAlarmWrite(timer, 1000000, true);
   // Start an alarm
   timerAlarmEnable(timer);
+#endif
 }
 
 void setup(void)
@@ -164,7 +170,8 @@ void setup(void)
   }
   SMcontroler.init();
 
-  if (!SPIFFS.begin()) {
+  if (!SPIFFS.begin())
+  {
     DEBUGln("SPIFFS Mount failed");
   } else {
     DEBUGln("SPIFFS Mount succesfull");
@@ -197,7 +204,7 @@ void setup(void)
   brightness->setMax(255);
   brightness->setStep(5);
   brightness->setRetain(true);
-  brightness->setState(200);
+  brightness->setState((uint16_t)200);
 
   mqtt.setDataPrefix("smartmonitor");
   mqtt.setBufferSize(2000);
@@ -218,16 +225,35 @@ void setup(void)
     while (lcd.getTouch(&x, &y));
     SMcontroler.setScratchMode();
   } else {
-    LoadConfig();
-    delay(2000);
-    SMcontroler.drawBackground();
-    SMcontroler.drawHeader("Attente serveur");
+    needConfigLoading = true;
+    /*
+      LoadConfig();
+      SMcontroler.playBuzzer();
+      delay(2000);
+      SMcontroler.drawBackground();
+      SMcontroler.drawHeader("Attente serveur");
+    */
   }
   setupTimer();
 }
 
 void loop()
 {
+  if (needConfigLoading)
+  {
+    if (isConfigLoaded)
+    {
+      DEBUGln("disconnect old mqtt");
+      mqtt.disconnect();
+      SMcontroler.deletePages();
+      isConfigLoaded = false;
+    }
+    needConfigLoading = false;
+    LoadConfig();
+    SMcontroler.playBuzzer();
+    SMcontroler.drawBackground();
+    SMcontroler.drawHeader("Attente serveur");
+  }
   bool isNewSec = false;
   if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE)
   {
@@ -236,20 +262,34 @@ void loop()
     isrTopSecond = false;
     portEXIT_CRITICAL(&timerMux);
   }
-  bool is5Sec = false;
+  bool is5sec = false;
   if (isNewSec)
   {
     secondCounter = (secondCounter + 1) % 60;
     if ((secondCounter % 5) == 0 && secondCounter != secondCounterOld)
     {
-      is5Sec = true;
+      is5sec = true;
+    }
+    if (secondCounter == 0 && secondCounter != secondCounterOld)
+    {
+      minuteCounter++;
     }
     secondCounterOld = secondCounter;
+  }
+  if (is5sec && !wifiok && (WiFi.getMode() == WIFI_STA))
+  {
+    DEBUGln("Try reconnect WiFi");
+    WiFi.reconnect();
+  }
+  if (isNewSec && (minuteCounter >= 10) && !wifiok && (WiFi.getMode() == WIFI_AP))
+  {
+    DEBUGln("10min wifi AP restart");
+    ESP.restart();
   }
   if (isConfigLoaded)
   {
     mqtt.loop();
-    SMcontroler.loop(isNewSec, is5Sec);
+    SMcontroler.loop(isNewSec, is5sec);
     for (int i = 0; i < nbGPIO; i++)
     {
       GPIOs[i].process(isNewSec);
@@ -310,12 +350,14 @@ void onNumberCommand(HANumeric number, HANumber * sender)
   sender->setState(number); // report the selected option back to the HA panel
 }
 
-JsonVariant findNestedKey(JsonObject obj, const char* key) {
+JsonVariant findNestedKey(JsonObject obj, const char* key)
+{
   JsonVariant foundObject = obj[key];
   if (!foundObject.isNull())
     return foundObject;
 
-  for (JsonPair pair : obj) {
+  for (JsonPair pair : obj)
+  {
     JsonVariant nestedObject = findNestedKey(pair.value(), key);
     if (!nestedObject.isNull())
       return nestedObject;
@@ -407,8 +449,10 @@ void createKeypadPage(const char* target)
   char txt[] = "?";
   int padding_x = (displayConfig.width - displayConfig.kpadsize * 6) / 2;
   int padding_y = displayConfig.headerheight;
-  for (byte r = 0; r < 4; r++) {
-    for (byte c = 0; c < 3; c++) {
+  for (byte r = 0; r < 4; r++)
+  {
+    for (byte c = 0; c < 3; c++)
+    {
       txt[0] = pattern[r * 3 + c];
       int x = padding_x + (displayConfig.kpadsize * c);
       int y = padding_y + (displayConfig.kpadsize * r);
@@ -432,7 +476,8 @@ void LoadConfig()
   }
   DeserializationError error = deserializeJson(docJson, file);
   file.close();
-  if (error) {
+  if (error)
+  {
     DEBUGln("failed to deserialize config file");
     return;
   }

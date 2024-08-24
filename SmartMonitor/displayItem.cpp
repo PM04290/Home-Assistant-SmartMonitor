@@ -34,9 +34,8 @@ Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c
   _pageID = NULL;
   _dispMode = displayMode::title_text;
   _iconPath = NULL;
-  _dataIcon = "";
-  _dataUnit = "";
-  //_datatype = DataType::implicit;
+  _dataIcon = NULL;
+  _dataUnit = NULL;
   _iconSize = 48;
   _dataSource = NULL;
 }
@@ -46,12 +45,27 @@ Xitem::Xitem(uint8_t idx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c
 {
 }
 
+Xitem::~Xitem()
+{
+  if (_title) free(_title);
+  if (_pageID) free(_pageID);
+  if (_subtype) free(_subtype);
+  if (_mqtttopic) free(_mqtttopic);
+  if (_mqttstate) free(_mqttstate);
+  if (_mqttstateattribute) free(_mqttstateattribute);
+  if (_mqttcommand) free(_mqttcommand);
+  if (_dataSource) free(_dataSource);
+  if (_dataUnit) free(_dataUnit);
+  if (_dataIcon) free(_dataIcon);
+}
+
 uint8_t Xitem::getIndex()
 {
   return _idx;
 }
 
-void Xitem::setPage(Xpage * page) {
+void Xitem::setPage(Xpage * page)
+{
   _page = page;
 }
 
@@ -94,7 +108,8 @@ Xitem* Xitem::setMQTTconfig(const char* target, const char* source, const char* 
       strcat(_mqttstate, sstate.c_str());
     }
   }
-  if (scommand.length() > 0) {
+  if (scommand.length() > 0)
+  {
     _mqttcommand = (char*)malloc(sbase.length() + scommand.length() + 1);
     strcpy(_mqttcommand, sbase.c_str());
     strcat(_mqttcommand, scommand.c_str());
@@ -106,14 +121,16 @@ Xitem* Xitem::setMQTTconfig(const char* target, const char* source, const char* 
   strcpy(_dataIcon, icon);
   _iconPath = new char[50];
   strcpy(_iconPath, "/i/s48-error.png");
-  if (strstr(_dataSource, "alarm_control") || strstr(_dataSource, "weather")) {
+  if (strstr(_dataSource, "alarm_control") || strstr(_dataSource, "weather"))
+  {
     _dispMode = displayMode::data_icon;
   }
   if (strstr(_dataSource, "binary_sensor")
       || strstr(_dataSource, "switch")
       || strstr(_dataSource, "cover")
       || strstr(_dataSource, "lock")
-      || strstr(_dataSource, "light")) {
+      || strstr(_dataSource, "light"))
+  {
     _dispMode = displayMode::data_icon | displayMode::title_text;
   }
   if (_dispMode == displayMode::title_text && strlen(icon)) {
@@ -418,7 +435,11 @@ void XitemInfo::setData(String Sdata)
       sprintf(_iconPath, "/i/d48-switch-%s.png", _data.c_str());
     }
     if (strstr(_dataSource, "binary_sensor")) {
-      sprintf(_iconPath, "/i/d48-%s-%s.png", _dataIcon, _data.c_str());
+      if (_dataIcon) {
+        sprintf(_iconPath, "/i/d48-%s-%s.png", _dataIcon, _data.c_str());
+      } else {
+        sprintf(_iconPath, "/i/d48-bool-%s.png", _data.c_str());
+      }
     }
   }
   if (isVisible()) {
